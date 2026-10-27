@@ -1,0 +1,52 @@
+{
+  "array-sum": {
+    "python": "import sys\ntokens = sys.stdin.read().split()\nif not tokens or int(tokens[0]) == 0:\n    print(0)\nelse:\n    n = int(tokens[0])\n    nums = [int(x) for x in tokens[1:n+1]]\n    print(sum(nums))\n",
+    "javascript": "const fs = require('fs');\nconst tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/).filter(Boolean);\nif (tokens.length === 0 || parseInt(tokens[0], 10) === 0) {\n  console.log(0);\n} else {\n  const n = parseInt(tokens[0], 10);\n  const nums = tokens.slice(1, n + 1).map(Number);\n  console.log(nums.reduce((a, b) => a + b, 0));\n}\n",
+    "wrong": "print(-999)\n"
+  },
+  "find-maximum": {
+    "python": "import sys\ntokens = sys.stdin.read().split()\nif tokens:\n    n = int(tokens[0])\n    nums = [int(x) for x in tokens[1:n+1]]\n    print(max(nums))\n",
+    "javascript": "const fs = require('fs');\nconst tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/).filter(Boolean);\nif (tokens.length >= 2) {\n  const n = parseInt(tokens[0], 10);\n  const nums = tokens.slice(1, n + 1).map(Number);\n  console.log(Math.max(...nums));\n}\n",
+    "wrong": "print(0)\n"
+  },
+  "second-largest": {
+    "python": "import sys\ntokens = sys.stdin.read().split()\nif len(tokens) >= 2:\n    n = int(tokens[0])\n    nums = list(set(int(x) for x in tokens[1:n+1]))\n    nums.sort()\n    if len(nums) < 2:\n        print(-1)\n    else:\n        print(nums[-2])\nelse:\n    print(-1)\n",
+    "javascript": "const fs = require('fs');\nconst tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/).filter(Boolean);\nif (tokens.length >= 2) {\n  const n = parseInt(tokens[0], 10);\n  const nums = Array.from(new Set(tokens.slice(1, n + 1).map(Number))).sort((a, b) => a - b);\n  console.log(nums.length < 2 ? -1 : nums[nums.length - 2]);\n} else {\n  console.log(-1);\n}\n",
+    "wrong": "print(-1)\n"
+  },
+  "move-zeroes": {
+    "python": "import sys\ntokens = sys.stdin.read().split()\nif tokens:\n    n = int(tokens[0])\n    nums = [int(x) for x in tokens[1:n+1]]\n    non_zeros = [x for x in nums if x != 0]\n    zeros = [0] * (len(nums) - len(non_zeros))\n    print(' '.join(map(str, non_zeros + zeros)))\n",
+    "javascript": "const fs = require('fs');\nconst tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/).filter(Boolean);\nif (tokens.length >= 1) {\n  const n = parseInt(tokens[0], 10);\n  const nums = tokens.slice(1, n + 1).map(Number);\n  const nonZero = nums.filter(x => x !== 0);\n  const zeros = new Array(nums.length - nonZero.length).fill(0);\n  console.log([...nonZero, ...zeros].join(' '));\n}\n",
+    "wrong": "print('0 0 0')\n"
+  },
+  "contains-duplicate": {
+    "python": "import sys\ntokens = sys.stdin.read().split()\nif tokens:\n    n = int(tokens[0])\n    nums = [int(x) for x in tokens[1:n+1]]\n    has_dup = len(nums) != len(set(nums))\n    print('true' if has_dup else 'false')\n",
+    "javascript": "const fs = require('fs');\nconst tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/).filter(Boolean);\nif (tokens.length >= 1) {\n  const n = parseInt(tokens[0], 10);\n  const nums = tokens.slice(1, n + 1);\n  const unique = new Set(nums);\n  console.log(unique.size !== nums.length ? 'true' : 'false');\n}\n",
+    "wrong": "print('false')\n"
+  },
+  "reverse-string": {
+    "python": "import sys\ntext = sys.stdin.read().rstrip('\\r\\n')\nprint(text[::-1])\n",
+    "javascript": "const fs = require('fs');\nconst text = fs.readFileSync(0, 'utf-8').replace(/[\\r\\n]+$/, '');\nconsole.log(text.split('').reverse().join(''));\n",
+    "wrong": "print('wrong')\n"
+  },
+  "is-palindrome": {
+    "python": "import sys\ntext = sys.stdin.read().rstrip('\\r\\n')\nfiltered = [c.lower() for c in text if c.isalnum()]\nprint('true' if filtered == filtered[::-1] else 'false')\n",
+    "javascript": "const fs = require('fs');\nconst text = fs.readFileSync(0, 'utf-8').replace(/[\\r\\n]+$/, '');\nconst filtered = text.toLowerCase().replace(/[^a-z0-9]/g, '');\nconst reversed = filtered.split('').reverse().join('');\nconsole.log(filtered === reversed ? 'true' : 'false');\n",
+    "wrong": "print('false')\n"
+  },
+  "count-vowels": {
+    "python": "import sys\ntext = sys.stdin.read().rstrip('\\r\\n')\nvowels = set('aeiouAEIOU')\nv_count = sum(1 for ch in text if ch in vowels)\nc_count = sum(1 for ch in text if ch.isalpha() and ch not in vowels)\nprint(f'Vowels: {v_count}, Consonants: {c_count}')\n",
+    "javascript": "const fs = require('fs');\nconst text = fs.readFileSync(0, 'utf-8').replace(/[\\r\\n]+$/, '');\nlet v = 0, c = 0;\nfor (const ch of text) {\n  if (/[a-zA-Z]/.test(ch)) {\n    if (/[aeiouAEIOU]/.test(ch)) v++;\n    else c++;\n  }\n}\nconsole.log(`Vowels: ${v}, Consonants: ${c}`);\n",
+    "wrong": "print('Vowels: 0, Consonants: 0')\n"
+  },
+  "check-anagram": {
+    "python": "import sys\nlines = sys.stdin.read().splitlines()\ns1 = ''.join(lines[0].split()) if len(lines) > 0 else ''\ns2 = ''.join(lines[1].split()) if len(lines) > 1 else ''\nprint('true' if sorted(s1) == sorted(s2) else 'false')\n",
+    "javascript": "const fs = require('fs');\nconst lines = fs.readFileSync(0, 'utf-8').split(/\\r?\\n/);\nconst s1 = (lines[0] || '').replace(/\\s+/g, '').split('').sort().join('');\nconst s2 = (lines[1] || '').replace(/\\s+/g, '').split('').sort().join('');\nconsole.log(s1 === s2 ? 'true' : 'false');\n",
+    "wrong": "print('false')\n"
+  },
+  "first-non-repeating": {
+    "python": "import sys\nfrom collections import Counter\ntext = sys.stdin.read().strip()\ncounts = Counter(text)\nfound = '-1'\nfor ch in text:\n    if counts[ch] == 1:\n        found = ch\n        break\nprint(found)\n",
+    "javascript": "const fs = require('fs');\nconst text = fs.readFileSync(0, 'utf-8').trim();\nconst counts = {};\nfor (const ch of text) counts[ch] = (counts[ch] || 0) + 1;\nlet found = '-1';\nfor (const ch of text) {\n  if (counts[ch] === 1) {\n    found = ch;\n    break;\n  }\n}\nconsole.log(found);\n",
+    "wrong": "print('x')\n"
+  }
+}

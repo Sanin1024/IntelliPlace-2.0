@@ -1,0 +1,371 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS — lowercase to match all controller/seed code
+// ============================================================
+
+enum Role {
+  student
+  po
+  trainer
+  admin
+}
+
+enum KnowledgeLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum PlacementStatus {
+  not_placed
+  in_process
+  placed
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+enum TopicType {
+  aptitude
+  coding
+}
+
+enum AttemptType {
+  mock
+  practice
+}
+
+enum AttemptStatus {
+  in_progress
+  submitted
+  expired
+}
+
+// ============================================================
+// USERS & PROFILES
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         Role     @default(student)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  studentProfile         StudentProfile?
+  uploadedResources      Resource[]           @relation("ResourceUploader")
+  createdMockTests       MockTest[]           @relation("MockTestCreator")
+  testAttempts           TestAttempt[]
+  codingSubmissions      CodingSubmission[]
+  notificationRecipients NotificationRecipient[]
+  createdNotifications   Notification[]      @relation("NotificationCreator")
+  targetCompanies        StudentTargetCompany[]
+
+  @@map("users")
+}
+
+model Branch {
+  id        Int                      @id @default(autoincrement())
+  name      String                   @unique
+  students  StudentProfile[]
+  companies CompanyEligibleBranch[]
+
+  @@map("branches")
+}
+
+model Batch {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  graduationYear Int             @map("graduation_year")
+  students       StudentProfile[]
+  mockTests      MockTest[]
+
+  @@map("batches")
+}
+
+model StudentProfile {
+  userId          String          @id @map("user_id")
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchId        Int?            @map("branch_id")
+  branch          Branch?         @relation(fields: [branchId], references: [id])
+  batchId         Int?             @map("batch_id")
+  batch           Batch?          @relation(fields: [batchId], references: [id])
+  knowledgeLevel  KnowledgeLevel   @default(beginner) @map("knowledge_level")
+  cgpa            Float?
+  placementStatus PlacementStatus  @default(not_placed) @map("placement_status")
+  resumeUrl       String?         @map("resume_url")
+  targetRole      String?         @map("target_role")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@map("student_profiles")
+}
+
+// ============================================================
+// TOPICS & QUESTIONS
+// ============================================================
+
+model Topic {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique
+  type              TopicType
+  aptitudeQuestions AptitudeQuestion[]
+  codingProblems    CodingProblem[]
+  resources         Resource[]
+  companyTopics     CompanyTopic[]
+
+  @@map("topics")
+}
+
+model AptitudeQuestion {
+  id             String              @id @default(uuid())
+  topicId        Int                 @map("topic_id")
+  topic          Topic               @relation(fields: [topicId], references: [id])
+  difficulty     Difficulty          @default(easy)
+  questionText   String              @map("question_text")
+  optionA        String              @map("option_a")
+  optionB        String              @map("option_b")
+  optionC        String              @map("option_c")
+  optionD        String              @map("option_d")
+  correctOption  String
+  explanation    String?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  mockTests      MockTestQuestion[]
+  studentAnswers StudentAnswer[]
+
+  @@index([topicId])
+  @@map("aptitude_questions")
+}
+
+model CodingProblem {
+  id            String             @id @default(uuid())
+  topicId       Int                @map("topic_id")
+  topic         Topic              @relation(fields: [topicId], references: [id])
+  difficulty    Difficulty         @default(easy)
+  title         String
+  description   String
+  sampleInput   String             @map("sample_input")
+  sampleOutput  String             @map("sample_output")
+  tags          String[]
+  createdAt     DateTime           @default(now()) @map("created_at")
+  testCases     CodingTestCase[]
+  submissions   CodingSubmission[]
+
+  @@index([topicId])
+  @@map("coding_problems")
+}
+
+model CodingTestCase {
+  id             String        @id @default(uuid())
+  problemId      String        @map("problem_id")
+  problem        CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  input          String
+  expectedOutput String        @map("expected_output")
+  isHidden       Boolean       @default(true) @map("is_hidden")
+
+  @@index([problemId])
+  @@map("coding_test_cases")
+}
+
+// ============================================================
+// COMPANIES
+// ============================================================
+
+model Company {
+  id               String                   @id @default(uuid())
+  name             String                   @unique
+  description      String?
+  jobRole          String?                  @map("job_role")
+  package          Float?
+  eligibilityCgpa  Float?                   @map("eligibility_cgpa")
+  driveDate        DateTime?                @map("drive_date")
+  syllabusText     String?                  @map("syllabus_text")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  eligibleBranches CompanyEligibleBranch[]
+  topics           CompanyTopic[]
+  targetStudents   StudentTargetCompany[]
+
+  @@map("companies")
+}
+
+model CompanyEligibleBranch {
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branchId  Int     @map("branch_id")
+  branch    Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, branchId])
+  @@map("company_eligible_branches")
+}
+
+model CompanyTopic {
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  topicId   Int     @map("topic_id")
+  topic     Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, topicId])
+  @@map("company_topics")
+}
+
+model StudentTargetCompany {
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, companyId])
+  @@map("student_target_companies")
+}
+
+// ============================================================
+// RESOURCES
+// ============================================================
+
+model Resource {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  fileUrl     String   @map("file_url")
+  topicId     Int?     @map("topic_id")
+  topic       Topic?   @relation(fields: [topicId], references: [id])
+  uploadedBy  String   @map("uploaded_by")
+  uploader    User     @relation("ResourceUploader", fields: [uploadedBy], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([topicId])
+  @@map("resources")
+}
+
+// ============================================================
+// MOCK TESTS & ATTEMPTS
+// ============================================================
+
+model MockTest {
+  id             String             @id @default(uuid())
+  title          String
+  description    String?
+  durationMins   Int                @default(30) @map("duration_mins")
+  batchId        Int?               @map("batch_id")
+  batch          Batch?             @relation(fields: [batchId], references: [id])
+  availableFrom  DateTime?          @map("available_from")
+  availableUntil DateTime?          @map("available_until")
+  maxAttempts    Int                @default(1) @map("max_attempts")
+  createdBy      String             @map("created_by")
+  creator        User               @relation("MockTestCreator", fields: [createdBy], references: [id])
+  createdAt      DateTime           @default(now()) @map("created_at")
+  isActive       Boolean            @default(true) @map("is_active")
+  questions      MockTestQuestion[]
+  attempts       TestAttempt[]
+
+  @@index([batchId])
+  @@map("mock_tests")
+}
+
+model MockTestQuestion {
+  testId     String           @map("test_id")
+  test       MockTest         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  questionId String           @map("question_id")
+  question   AptitudeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  marks      Int              @default(1)
+
+  @@id([testId, questionId])
+  @@map("mock_test_questions")
+}
+
+model TestAttempt {
+  id          String          @id @default(uuid())
+  testId      String?         @map("test_id")
+  test        MockTest?       @relation(fields: [testId], references: [id])
+  studentId   String          @map("student_id")
+  student     User            @relation(fields: [studentId], references: [id])
+  attemptType AttemptType     @default(mock) @map("attempt_type")
+  status      AttemptStatus   @default(in_progress)
+  startTime   DateTime        @default(now()) @map("start_time")
+  endTime     DateTime?       @map("end_time")
+  score       Int?
+  totalMarks  Int?            @map("total_marks")
+  answers     StudentAnswer[]
+
+  @@index([studentId])
+  @@index([testId])
+  @@map("test_attempts")
+}
+
+model StudentAnswer {
+  attemptId      String           @map("attempt_id")
+  attempt        TestAttempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId     String           @map("question_id")
+  question       AptitudeQuestion @relation(fields: [questionId], references: [id])
+  selectedOption String?          @map("selected_option")
+  isCorrect      Boolean?         @map("is_correct")
+
+  @@id([attemptId, questionId])
+  @@map("student_answers")
+}
+
+// ============================================================
+// CODING SUBMISSIONS
+// ============================================================
+
+model CodingSubmission {
+  id              String        @id @default(uuid())
+  problemId       String        @map("problem_id")
+  problem         CodingProblem @relation(fields: [problemId], references: [id])
+  studentId       String        @map("student_id")
+  student         User          @relation(fields: [studentId], references: [id])
+  code            String
+  language        String        @default("python")
+  passedTestCases Int           @default(0) @map("passed_test_cases")
+  totalTestCases  Int           @default(0) @map("total_test_cases")
+  isPassed        Boolean       @default(false) @map("is_passed")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@index([problemId])
+  @@map("coding_submissions")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id          String                   @id @default(uuid())
+  title       String
+  message     String
+  createdBy   String                   @map("created_by")
+  creator     User                     @relation("NotificationCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  recipients  NotificationRecipient[]
+
+  @@map("notifications")
+}
+
+model NotificationRecipient {
+  notificationId String       @map("notification_id")
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRead         Boolean      @default(false) @map("is_read")
+  readAt         DateTime?    @map("read_at")
+
+  @@id([notificationId, userId])
+  @@index([userId])
+  @@map("notification_recipients")
+}
