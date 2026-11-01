@@ -8,35 +8,36 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
   if (totalPages <= 1) return null;
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '12px',
+        marginTop: '24px',
+        userSelect: 'none',
+      }}
+    >
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        style={btnStyle(page === 1)}
+        className="btn btn-secondary btn-sm"
+        aria-label="Previous page"
       >
         ← Prev
       </button>
-      <span>Page {page} of {totalPages}</span>
+      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>
+        Page <strong style={{ color: 'var(--text-primary)' }}>{page}</strong> of{' '}
+        <strong style={{ color: 'var(--text-primary)' }}>{totalPages}</strong>
+      </span>
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        style={btnStyle(page === totalPages)}
+        className="btn btn-secondary btn-sm"
+        aria-label="Next page"
       >
         Next →
       </button>
     </div>
   );
-}
-
-function btnStyle(disabled: boolean): React.CSSProperties {
-  return {
-    padding: '6px 12px',
-    border: '1px solid #e2e8f0',
-    background: disabled ? '#f1f5f9' : '#fff',
-    color: disabled ? '#94a3b8' : '#1a73e8',
-    borderRadius: '6px',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    fontWeight: 600,
-    fontSize: '13px',
-  };
 }

@@ -524,9 +524,10 @@ const statsGrid: React.CSSProperties = {
 };
 
 const statCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--shadow-card)',
   padding: '18px',
   display: 'flex',
   alignItems: 'center',
@@ -536,7 +537,7 @@ const statCardStyle: React.CSSProperties = {
 const statIconBox = (bg: string, color: string): React.CSSProperties => ({
   width: '46px',
   height: '46px',
-  borderRadius: '10px',
+  borderRadius: 'var(--radius-sm)',
   backgroundColor: bg,
   color,
   display: 'flex',
@@ -549,15 +550,15 @@ const statIconBox = (bg: string, color: string): React.CSSProperties => ({
 const statLabelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '12px',
-  color: '#64748b',
+  color: 'var(--text-muted)',
   fontWeight: 500,
 };
 
 const statNumberStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '22px',
-  fontWeight: 800,
-  color: '#0f172a',
+  fontWeight: 700,
+  color: 'var(--text-primary)',
   marginTop: '2px',
 };
 
@@ -568,9 +569,10 @@ const twoColGrid: React.CSSProperties = {
 };
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--shadow-card)',
   padding: '20px',
 };
 
@@ -664,9 +666,9 @@ const emptyBoxMedium: React.CSSProperties = {
 };
 
 const errorContainerStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  border: '1px solid #fee2e2',
-  borderRadius: '12px',
+  backgroundColor: 'var(--surface)',
+  border: '1px solid var(--error-border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '48px 24px',
   textAlign: 'center',
   display: 'flex',

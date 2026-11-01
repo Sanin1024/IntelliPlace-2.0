@@ -15,6 +15,8 @@ const NAV_ITEMS: NavItem[] = [
   // Shared / Student
   { to: '/dashboard', label: 'Dashboard', icon: '🏠', roles: ['student', 'po', 'trainer', 'admin'] },
   { to: '/analytics', label: 'My Analytics', icon: '📊', roles: ['student'] },
+  { to: '/coding-interview', label: 'Coding Prep', icon: '💻', roles: ['student'] },
+  { to: '/coding-interview/problems', label: 'Problem Bank', icon: '📚', roles: ['student'] },
   { to: '/tests', label: 'Mock Tests', icon: '📋', roles: ['student'] },
   { to: '/practice', label: 'Practice', icon: '📝', roles: ['student'] },
   { to: '/problems', label: 'Coding Problems', icon: '💻', roles: ['student', 'trainer'] },
@@ -24,25 +26,11 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/offers', label: 'My Offers', icon: '🏆', roles: ['student'] },
   { to: '/training', label: 'Training Hub', icon: '🎓', roles: ['student'] },
   { to: '/training/resources', label: 'Resource Library', icon: '📚', roles: ['student'] },
-  { to: '/mechanical-training', label: 'ME Training', icon: '⚙️', roles: ['student'] },
-  { to: '/mechanical-training/questions', label: 'ME Questions', icon: '📝', roles: ['student'] },
-  { to: '/mechanical-training/projects', label: 'ME Projects', icon: '🔧', roles: ['student'] },
-  { to: '/mechanical-training/companies', label: 'ME Companies', icon: '🏢', roles: ['student'] },
-  { to: '/mechanical-training/software', label: 'ME Software', icon: '💻', roles: ['student'] },
-  { to: '/civil-training', label: 'Civil Training', icon: '🏗️', roles: ['student'] },
-  { to: '/civil-training/questions', label: 'Civil Questions', icon: '📝', roles: ['student'] },
-  { to: '/civil-training/companies', label: 'Civil Companies', icon: '🏢', roles: ['student'] },
-  { to: '/ece-training', label: 'ECE Training', icon: '📡', roles: ['student'] },
-  { to: '/ece-training/questions', label: 'ECE Questions', icon: '📝', roles: ['student'] },
-  { to: '/ece-training/companies', label: 'ECE Companies', icon: '🔌', roles: ['student'] },
-  { to: '/eee-training', label: 'EEE Training', icon: '⚡', roles: ['student'] },
-  { to: '/eee-training/questions', label: 'EEE Questions', icon: '📝', roles: ['student'] },
-  { to: '/eee-training/practicals', label: 'EEE Practicals', icon: '🔧', roles: ['student'] },
-  { to: '/eee-training/companies', label: 'EEE Companies', icon: '🏢', roles: ['student'] },
   { to: '/it-training', label: 'IT Training', icon: '💻', roles: ['student'] },
-  { to: '/it-training/questions', label: 'IT Questions', icon: '📝', roles: ['student'] },
-  { to: '/it-training/practicals', label: 'IT Practicals', icon: '🚀', roles: ['student'] },
-  { to: '/it-training/companies', label: 'IT Companies', icon: '🏢', roles: ['student'] },
+  { to: '/mechanical-training', label: 'ME Training', icon: '⚙️', roles: ['student'] },
+  { to: '/civil-training', label: 'Civil Training', icon: '🏗️', roles: ['student'] },
+  { to: '/ece-training', label: 'ECE Training', icon: '📡', roles: ['student'] },
+  { to: '/eee-training', label: 'EEE Training', icon: '⚡', roles: ['student'] },
   { to: '/recommendations', label: 'For You', icon: '✨', roles: ['student'] },
   { to: '/skills', label: 'My Skills', icon: '🧩', roles: ['student'] },
   { to: '/academic', label: 'Academic & Results', icon: '🎓', roles: ['student'] },
@@ -84,16 +72,9 @@ const NAV_ITEMS: NavItem[] = [
 
 const roleLabels: Record<string, string> = {
   admin: 'ADMIN',
-  po: 'PT OFFICER',       // Placement & Training Officer
-  trainer: 'TUTOR',        // Tutor
-  student: 'STUDENT'
-};
-
-const roleColors: Record<string, string> = {
-  admin: 'var(--color-role-admin)',
-  po: 'var(--color-role-po)',
-  trainer: 'var(--color-role-trainer)',
-  student: 'var(--color-role-student)',
+  po: 'PT OFFICER',
+  trainer: 'TRAINER',
+  student: 'STUDENT',
 };
 
 export default function AppLayout() {
@@ -111,101 +92,112 @@ export default function AppLayout() {
 
   const sidebarContent = (
     <>
+      {/* Brand Header */}
       <div
         style={{
-          padding: '24px 20px',
-          borderBottom: '1px solid var(--color-border)',
+          padding: '20px 18px',
+          borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
+          background: 'var(--nav-bg)',
         }}
       >
         <div
           style={{
-            width: '34px',
-            height: '34px',
-            background: 'var(--color-primary)',
-            borderRadius: 'var(--radius-md)',
+            width: '32px',
+            height: '32px',
+            background: 'var(--text-primary)',
+            borderRadius: 'var(--radius-sm)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--color-on-primary)',
-            fontWeight: 800,
-            fontSize: '14px',
-            boxShadow: 'var(--shadow-sm)',
+            color: 'var(--bg)',
+            fontWeight: 700,
+            fontSize: '13px',
+            letterSpacing: '-0.02em',
             flexShrink: 0,
+            boxShadow: 'var(--shadow-card)',
           }}
         >
           IP
         </div>
-        <h2
-          style={{
-            margin: 0,
-            color: 'var(--color-text)',
-            fontSize: '18px',
-            fontWeight: 800,
-            letterSpacing: '-0.025em',
-          }}
-        >
-          IntelliPlace
-        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <h2
+            style={{
+              margin: 0,
+              color: 'var(--text-primary)',
+              fontSize: '16px',
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+            }}
+          >
+            IntelliPlace
+          </h2>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>
+            Career Platform
+          </span>
+        </div>
       </div>
 
+      {/* Navigation List */}
       <nav
-        style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}
+        style={{
+          flex: 1,
+          padding: '16px 12px',
+          overflowY: 'auto',
+          background: 'var(--nav-bg)',
+        }}
         aria-label="Main navigation"
       >
         {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              padding: '10px 16px',
-              color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              textDecoration: 'none',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '4px',
-              fontSize: '14px',
-              fontWeight: 600,
-              background: isActive ? 'var(--color-primary-light)' : 'transparent',
-              transition: 'all var(--transition-fast)',
-            })}
+            className={({ isActive }) => `bonsai-nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <span style={{ marginRight: '12px', fontSize: '16px' }} aria-hidden="true">
+            <span style={{ marginRight: '10px', fontSize: '16px', display: 'flex', alignItems: 'center' }} aria-hidden="true">
               {item.icon}
             </span>
-            {item.label}
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      <div style={{ padding: '16px', borderTop: '1px solid var(--color-border)' }}>
+      {/* Sidebar Footer */}
+      <div
+        style={{
+          padding: '16px 14px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--nav-bg)',
+        }}
+      >
         <button
           onClick={handleLogout}
-          className="btn btn-secondary"
+          className="btn btn-secondary btn-sm"
           style={{
             width: '100%',
             justifyContent: 'center',
-            color: 'var(--color-danger)',
+            color: 'var(--error-text)',
+            borderColor: 'var(--border)',
           }}
         >
-          🚪 Logout
+          🚪 Sign Out
         </button>
       </div>
     </>
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Desktop Sidebar */}
       <aside
         style={{
           width: '260px',
-          background: 'var(--color-surface)',
-          borderRight: '1px solid var(--color-border)',
+          background: 'var(--nav-bg)',
+          borderRight: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -225,19 +217,21 @@ export default function AppLayout() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(3px)',
             zIndex: 100,
           }}
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <aside
             style={{
-              width: '260px',
-              background: 'var(--color-surface)',
+              width: '270px',
+              background: 'var(--nav-bg)',
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: 'var(--shadow-modal)',
+              borderRight: '1px solid var(--border)',
             }}
             className="mobile-drawer"
             onClick={(e) => e.stopPropagation()}
@@ -247,7 +241,7 @@ export default function AppLayout() {
         </div>
       )}
 
-      {/* Content Area with Single Outlet */}
+      {/* Main Content Area */}
       <div
         className="main-layout-area"
         style={{
@@ -256,6 +250,7 @@ export default function AppLayout() {
           flexDirection: 'column',
           minHeight: '100vh',
           minWidth: 0,
+          background: 'var(--bg)',
         }}
       >
         {/* Desktop Header */}
@@ -265,43 +260,60 @@ export default function AppLayout() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '16px 32px',
-            background: 'var(--color-surface)',
-            borderBottom: '1px solid var(--color-border)',
+            padding: '14px 32px',
+            background: 'var(--surface)',
+            borderBottom: '1px solid var(--border)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 40,
           }}
         >
           <div>
-            <span style={{ 
-              background: `color-mix(in srgb, ${roleColors[user.role] || 'var(--color-primary)'} 20%, transparent)`, 
-              color: roleColors[user.role] || 'var(--color-primary)', 
-              padding: '4px 12px', 
-              borderRadius: '12px', 
-              fontSize: '12px', 
-              fontWeight: 600, 
-              textTransform: 'uppercase' 
-            }}>
+            <span
+              className="badge"
+              style={{
+                backgroundColor: 'var(--accent-soft)',
+                color: 'var(--accent-text)',
+                borderColor: 'var(--accent-border)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                padding: '4px 12px',
+              }}
+            >
               {roleLabels[user.role] || user.role.toUpperCase()}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <ThemeToggle />
             <NotificationBell />
-            <div style={{ textAlign: 'right' }}>
-              <div
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                textAlign: 'right',
+                borderLeft: '1px solid var(--border)',
+                paddingLeft: '16px',
+              }}
+            >
+              <span
                 style={{
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  color: 'var(--color-text)',
+                  fontWeight: 500,
+                  fontSize: '13px',
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.3,
                 }}
               >
                 {user.name}
-              </div>
-              <div
-                style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}
+              </span>
+              <span
+                style={{ fontSize: '12px', color: 'var(--text-muted)' }}
                 className="text-ellipsis"
               >
                 {user.email}
-              </div>
+              </span>
             </div>
           </div>
         </header>
@@ -313,41 +325,52 @@ export default function AppLayout() {
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '12px 16px',
-            background: 'var(--color-surface)',
-            borderBottom: '1px solid var(--color-border)',
+            background: 'var(--surface)',
+            borderBottom: '1px solid var(--border)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 40,
           }}
         >
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: 'var(--color-text)',
-              padding: '4px',
-            }}
-            aria-label="Open navigation menu"
-          >
-            ☰
-          </button>
-          <h2
-            style={{
-              margin: 0,
-              color: 'var(--color-primary)',
-              fontSize: '18px',
-              fontWeight: 800,
-            }}
-          >
-            IntelliPlace
-          </h2>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: 'var(--text-primary)',
+                padding: '4px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 'var(--radius-sm)',
+              }}
+              aria-label="Open navigation menu"
+            >
+              ☰
+            </button>
+            <h2
+              style={{
+                margin: 0,
+                color: 'var(--text-primary)',
+                fontSize: '16px',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              IntelliPlace
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <ThemeToggle />
             <NotificationBell />
           </div>
         </header>
 
-        {/* Single Main Viewport */}
+        {/* Viewport Outlet */}
         <main
           className="fade-in main-content-body"
           style={{

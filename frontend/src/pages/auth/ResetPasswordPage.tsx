@@ -1,7 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { resetPassword } from '../../api/auth';
+import { ThemeToggle } from '../../theme/ThemeToggle';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -61,45 +62,112 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={styles.iconCircle}>
-            <Lock size={24} color="#4f46e5" />
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        backgroundColor: 'var(--bg)',
+        position: 'relative',
+      }}
+    >
+      <div style={{ position: 'absolute', top: 20, right: 24 }}>
+        <ThemeToggle />
+      </div>
+
+      <div
+        className="card"
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: 'var(--surface)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-dropdown)',
+          padding: '40px',
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--surface-muted)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+              color: 'var(--accent)',
+            }}
+          >
+            <Lock size={22} />
           </div>
-          <h1 style={styles.title}>Reset Password</h1>
-          <p style={styles.subtitle}>
+          <h1
+            style={{
+              fontSize: '22px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              margin: '0 0 6px 0',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Reset Password
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
             Choose a strong new password for your account. This will invalidate all prior sessions.
           </p>
         </div>
 
         {errorMessage && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={18} />
+          <div
+            role="alert"
+            className="alert alert-error"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '16px' }}
+          >
+            <AlertCircle size={16} />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {isSuccess ? (
-          <div style={styles.successBox}>
-            <CheckCircle2 size={24} color="#16a34a" />
+          <div
+            role="status"
+            className="alert alert-success"
+            style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}
+          >
+            <CheckCircle2 size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
-              <p style={{ fontWeight: 600, color: '#15803d', margin: 0 }}>Password Reset Complete!</p>
-              <p style={{ fontSize: '13px', color: '#166534', marginTop: '4px' }}>
+              <p style={{ fontWeight: 600, margin: 0, fontSize: '14px' }}>Password Reset Complete!</p>
+              <p style={{ fontSize: '13px', marginTop: '4px', opacity: 0.9 }}>
                 Your password has been securely updated. Redirecting to sign in...
               </p>
               <div style={{ marginTop: '12px' }}>
-                <Link to="/login" style={{ color: '#4f46e5', fontWeight: 600, textDecoration: 'underline' }}>
+                <Link
+                  to="/login"
+                  style={{
+                    color: 'var(--accent)',
+                    fontWeight: 500,
+                    textDecoration: 'underline',
+                    fontSize: '13px',
+                  }}
+                >
                   Click here to sign in now
                 </Link>
               </div>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {!searchParams.get('token') && (
-              <div style={styles.field}>
-                <label htmlFor="token" style={styles.label}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label
+                  htmlFor="token"
+                  style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}
+                >
                   Reset Token
                 </label>
                 <input
@@ -110,16 +178,19 @@ export default function ResetPasswordPage() {
                   placeholder="Paste your reset token"
                   required
                   disabled={isLoading}
-                  style={styles.input}
+                  className="input-field"
                 />
               </div>
             )}
 
-            <div style={styles.field}>
-              <label htmlFor="newPassword" style={styles.label}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label
+                htmlFor="newPassword"
+                style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}
+              >
                 New Password (minimum 8 characters)
               </label>
-              <div style={styles.passwordWrapper}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   id="newPassword"
                   type={showPassword ? 'text' : 'password'}
@@ -128,12 +199,24 @@ export default function ResetPasswordPage() {
                   placeholder="••••••••"
                   required
                   disabled={isLoading}
-                  style={styles.passwordInput}
+                  className="input-field"
+                  style={{ paddingRight: '42px' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={styles.toggleButton}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -141,8 +224,11 @@ export default function ResetPasswordPage() {
               </div>
             </div>
 
-            <div style={styles.field}>
-              <label htmlFor="confirmPassword" style={styles.label}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label
+                htmlFor="confirmPassword"
+                style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}
+              >
                 Confirm New Password
               </label>
               <input
@@ -153,157 +239,43 @@ export default function ResetPasswordPage() {
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
-                style={styles.input}
+                className="input-field"
               />
             </div>
 
-            <button type="submit" disabled={isLoading} style={styles.button}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                marginTop: '8px',
+                height: '48px',
+                fontSize: '14px',
+              }}
+            >
               {isLoading ? 'Resetting Password...' : 'Update Password'}
             </button>
           </form>
         )}
 
-        <div style={styles.footer}>
-          <Link to="/login" style={styles.backLink}>
-            Back to Sign In
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <Link
+            to="/login"
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: '13px',
+              textDecoration: 'none',
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Sign In
           </Link>
         </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    backgroundColor: '#f8fafc',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '440px',
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.08)',
-    padding: '36px',
-  },
-  header: {
-    textAlign: 'center',
-    marginBottom: '24px',
-  },
-  iconCircle: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    backgroundColor: '#eef2ff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 16px',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: 700,
-    color: '#0f172a',
-    margin: 0,
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    marginTop: '8px',
-    lineHeight: 1.5,
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#334155',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '14px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  passwordWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  passwordInput: {
-    width: '100%',
-    padding: '10px 42px 10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '14px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  toggleButton: {
-    position: 'absolute',
-    right: '12px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#64748b',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  button: {
-    padding: '12px',
-    borderRadius: '8px',
-    backgroundColor: '#4f46e5',
-    color: '#ffffff',
-    fontSize: '14px',
-    fontWeight: 600,
-    border: 'none',
-    cursor: 'pointer',
-    marginTop: '6px',
-  },
-  errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    backgroundColor: '#fef2f2',
-    color: '#b91c1c',
-    padding: '12px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    marginBottom: '16px',
-  },
-  successBox: {
-    display: 'flex',
-    gap: '12px',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    padding: '16px',
-    borderRadius: '8px',
-    marginBottom: '16px',
-  },
-  footer: {
-    marginTop: '24px',
-    textAlign: 'center',
-  },
-  backLink: {
-    color: '#64748b',
-    fontSize: '14px',
-    textDecoration: 'none',
-    fontWeight: 500,
-  },
-};
-

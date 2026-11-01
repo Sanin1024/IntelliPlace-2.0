@@ -48,10 +48,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Guard against duplicate submission while in flight or rate-limited
-    if (isLoading || retryCountdown > 0) {
-      return;
-    }
+    if (isLoading || retryCountdown > 0) return;
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
@@ -69,24 +66,22 @@ export default function LoginPage() {
 
     try {
       await login(trimmedEmail, password);
-      navigate('/dashboard', { replace: true });
+      sessionStorage.removeItem('auth_redirect_reason');
+      navigate('/dashboard');
     } catch (err: any) {
-      const status = err.response?.status;
-      const apiError =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        'Login failed. Please check your credentials and try again.';
-
-      setError(apiError);
-      // Clear password field for security while preserving email for convenience
-      setPassword('');
+      const status = err?.status || err?.response?.status;
+      const data = err?.data || err?.response?.data;
 
       if (status === 429) {
-        const retryHeader = err.response?.headers?.['retry-after'];
-        const retryBody = err.response?.data?.retryAfter;
-        const seconds = Number.parseInt(String(retryHeader || retryBody), 10) || 60;
-        setRetryCountdown(seconds);
+        const retryAfter = err?.retryAfterSeconds || 60;
+        setRetryCountdown(retryAfter);
+        setError(`Too many login attempts. Please wait ${retryAfter} seconds.`);
+      } else if (status === 401) {
+        setError(data?.message || 'Invalid email or password.');
+      } else if (status === 403) {
+        setError('Your account has been deactivated. Please contact an administrator.');
+      } else {
+        setError(data?.message || 'Login failed. Please check your credentials and try again.');
       }
     } finally {
       setIsLoading(false);
@@ -96,29 +91,104 @@ export default function LoginPage() {
   const isSubmitDisabled = isLoading || retryCountdown > 0;
 
   return (
-    <div style={styles.container}>
-      <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg)',
+        position: 'relative',
+        padding: '24px 16px',
+      }}
+    >
+      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
         <ThemeToggle />
       </div>
-      <div style={styles.card}>
-        <h1 style={styles.title}>IntelliPlace</h1>
-        <p style={styles.subtitle}>Placement Training & Career Readiness</p>
 
-        {notice && <div style={styles.notice}>{notice}</div>}
+      <div
+        className="card fade-in"
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          padding: '40px',
+          backgroundColor: 'var(--surface)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-dropdown)',
+        }}
+      >
+        {/* Brand Icon & Heading */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              backgroundColor: 'var(--text-primary)',
+              color: 'var(--bg)',
+              borderRadius: 'var(--radius-sm)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '15px',
+              letterSpacing: '-0.02em',
+              marginBottom: '16px',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            IP
+          </div>
+          <h1
+            style={{
+              margin: '0 0 6px 0',
+              color: 'var(--text-primary)',
+              fontSize: '24px',
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Welcome to IntelliPlace
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>
+            Sign in to access your placement readiness portal
+          </p>
+        </div>
+
+        {notice && (
+          <div
+            role="status"
+            className="alert alert-info"
+            style={{ marginBottom: '16px', fontSize: '13px' }}
+          >
+            {notice}
+          </div>
+        )}
+
         {error && (
-          <div style={styles.error} role="alert">
-            <div>{error}</div>
-            {retryCountdown > 0 && (
-              <div style={{ marginTop: '6px', fontWeight: 600 }}>
-                Please wait {retryCountdown} second{retryCountdown === 1 ? '' : 's'} before retrying.
-              </div>
-            )}
+          <div
+            role="alert"
+            className="alert alert-error"
+            style={{ marginBottom: '16px', fontSize: '13px' }}
+          >
+            {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label htmlFor="email">Email</label>
+          <div style={{ marginBottom: '18px' }}>
+            <label
+              htmlFor="email"
+              style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Email Address
+            </label>
             <input
               id="email"
               type="email"
@@ -127,21 +197,31 @@ export default function LoginPage() {
               required
               disabled={isLoading}
               placeholder="you@example.com"
-              style={styles.input}
+              className="input-field"
             />
           </div>
 
-          <div style={styles.field}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label htmlFor="password">Password</label>
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label
+                htmlFor="password"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: 'var(--text-secondary)',
+                  margin: 0,
+                }}
+              >
+                Password
+              </label>
               <Link
                 to="/forgot-password"
-                style={{ fontSize: '12px', color: '#4f46e5', textDecoration: 'none', fontWeight: 500 }}
+                style={{ fontSize: '12px', color: 'var(--accent-text)', textDecoration: 'none', fontWeight: 500 }}
               >
                 Forgot password?
               </Link>
             </div>
-            <div style={styles.passwordWrapper}>
+            <div style={{ position: 'relative' }}>
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -150,17 +230,31 @@ export default function LoginPage() {
                 required
                 disabled={isLoading}
                 placeholder="••••••••"
-                style={styles.passwordInput}
+                className="input-field"
+                style={{ paddingRight: '40px' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={styles.toggleButton}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px',
+                }}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 title={showPassword ? 'Hide password' : 'Show password'}
                 disabled={isLoading}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -168,28 +262,32 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitDisabled}
-            style={{
-              ...styles.button,
-              ...(isSubmitDisabled ? styles.buttonDisabled : {}),
-            }}
+            className="btn btn-primary"
+            style={{ width: '100%', marginBottom: '16px' }}
           >
             {isLoading
-              ? 'Logging in...'
+              ? 'Signing in...'
               : retryCountdown > 0
               ? `Retry in ${retryCountdown}s`
-              : 'Login'}
+              : 'Sign In'}
           </button>
         </form>
 
-        <p style={styles.link}>
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: '13px',
+            color: 'var(--text-muted)',
+            margin: 0,
+          }}
+        >
           New student?{' '}
           <Link
             to="/register"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              minHeight: '40px',
-              padding: '0 8px',
+              color: 'var(--accent-text)',
+              fontWeight: 500,
+              textDecoration: 'none',
             }}
           >
             Create an account
@@ -199,107 +297,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    background: 'var(--color-bg)',
-    position: 'relative',
-    padding: '16px',
-  },
-  card: {
-    background: 'var(--color-surface)',
-    padding: '40px',
-    borderRadius: 'var(--radius-lg)',
-    boxShadow: 'var(--shadow-md)',
-    border: '1px solid var(--color-border)',
-    width: '100%',
-    maxWidth: '400px',
-  },
-  title: { textAlign: 'center', margin: 0, color: 'var(--color-primary)', fontSize: '28px' },
-  subtitle: { textAlign: 'center', color: 'var(--color-text-muted)', marginBottom: '24px' },
-  error: {
-    background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-    color: 'var(--color-danger)',
-    border: '1px solid var(--color-danger)',
-    padding: '10px 12px',
-    borderRadius: 'var(--radius-md)',
-    marginBottom: '16px',
-    fontSize: '14px',
-    lineHeight: 1.4,
-  },
-  notice: {
-    background: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
-    color: 'var(--color-info)',
-    border: '1px solid var(--color-info)',
-    padding: '10px 12px',
-    borderRadius: 'var(--radius-md)',
-    marginBottom: '16px',
-    fontSize: '14px',
-    lineHeight: 1.4,
-  },
-  field: { marginBottom: '16px' },
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--color-border)',
-    background: 'var(--color-surface)',
-    color: 'var(--color-text)',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-    marginTop: '4px',
-  },
-  passwordWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    marginTop: '4px',
-  },
-  passwordInput: {
-    width: '100%',
-    padding: '10px 42px 10px 12px',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--color-border)',
-    background: 'var(--color-surface)',
-    color: 'var(--color-text)',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-  },
-  toggleButton: {
-    position: 'absolute',
-    right: '8px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: 'var(--color-text-muted)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '6px',
-    borderRadius: '4px',
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    background: 'var(--color-primary)',
-    color: 'var(--color-on-primary)',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    fontSize: '16px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    marginTop: '8px',
-    transition: 'background-color 0.2s ease, transform 0.15s ease',
-  },
-  buttonDisabled: {
-    background: 'var(--color-border)',
-    color: 'var(--color-text-muted)',
-    cursor: 'not-allowed',
-    opacity: 0.8,
-  },
-  link: { textAlign: 'center', marginTop: '16px', fontSize: '14px', color: 'var(--color-text-muted)' },
-};

@@ -22,15 +22,22 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
           key={i}
           style={{
             height,
-            backgroundColor: '#e2e8f0',
-            borderRadius: type === 'line' ? '4px' : '8px',
-            animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            backgroundColor: 'var(--surface-muted)',
+            border: '1px solid var(--border)',
+            borderRadius: type === 'line' ? 'var(--radius-none)' : 'var(--radius-sm)',
+            animation: 'bonsaiPulse 1.8s ease-in-out infinite',
           }}
         />
       ))}
       <span style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
         Loading...
       </span>
+      <style>{`
+        @keyframes bonsaiPulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 0.25; }
+        }
+      `}</style>
     </div>
   );
 };

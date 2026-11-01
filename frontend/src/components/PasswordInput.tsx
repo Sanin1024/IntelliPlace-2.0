@@ -1,4 +1,5 @@
 import { useState, KeyboardEvent } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface Props {
   id: string;
@@ -12,7 +13,17 @@ interface Props {
   showStrength?: boolean;
 }
 
-export default function PasswordInput({ id, label, value, onChange, onBlur, error, autoComplete, required, showStrength }: Props) {
+export default function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  error,
+  autoComplete,
+  required,
+  showStrength,
+}: Props) {
   const [show, setShow] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
@@ -22,12 +33,22 @@ export default function PasswordInput({ id, label, value, onChange, onBlur, erro
 
   const strength = value.length < 8 ? 0 : value.length < 12 ? 1 : 2;
   const strengthLabel = ['Weak', 'Medium', 'Strong'][strength];
-  const strengthColor = ['#dc2626', '#d97706', '#16a34a'][strength];
+  const strengthColors = ['var(--error-text)', 'var(--warning-text)', 'var(--success-text)'];
+  const strengthBgColors = ['var(--error)', 'var(--warning)', 'var(--success)'];
 
   return (
     <div style={{ marginBottom: '16px' }}>
-      <label htmlFor={id} style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>
-        {label} {required && <span style={{ color: '#dc2626' }}>*</span>}
+      <label
+        htmlFor={id}
+        style={{
+          display: 'block',
+          fontSize: '13px',
+          fontWeight: 500,
+          marginBottom: '6px',
+          color: 'var(--text-secondary)',
+        }}
+      >
+        {label} {required && <span style={{ color: 'var(--error)' }}>*</span>}
       </label>
       <div style={{ position: 'relative' }}>
         <input
@@ -41,9 +62,10 @@ export default function PasswordInput({ id, label, value, onChange, onBlur, erro
           required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
+          className="input-field"
           style={{
-            width: '100%', padding: '10px 40px 10px 12px', borderRadius: '6px',
-            border: `1px solid ${error ? '#dc2626' : '#ddd'}`, fontSize: '14px', boxSizing: 'border-box'
+            paddingRight: '40px',
+            borderColor: error ? 'var(--error-border)' : undefined,
           }}
         />
         <button
@@ -51,23 +73,60 @@ export default function PasswordInput({ id, label, value, onChange, onBlur, erro
           onClick={() => setShow(!show)}
           aria-label={show ? `Hide ${label}` : `Show ${label}`}
           style={{
-            position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#64748b'
+            position: 'absolute',
+            right: '8px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+            borderRadius: 'var(--radius-none)',
           }}
         >
-          {show ? '👁️' : '👁️‍🗨️'}
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {capsLockOn && <p style={{ color: '#d97706', fontSize: '12px', marginTop: '4px' }}>Caps Lock is ON</p>}
+      {capsLockOn && (
+        <p style={{ color: 'var(--warning-text)', fontSize: '12px', marginTop: '4px' }}>
+          Caps Lock is ON
+        </p>
+      )}
       {showStrength && value.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-          <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px' }}>
-            <div style={{ width: `${(strength + 1) * 33}%`, height: '100%', background: strengthColor, borderRadius: '2px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+          <div
+            style={{
+              flex: 1,
+              height: '4px',
+              backgroundColor: 'var(--surface-muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-full)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${(strength + 1) * 33.33}%`,
+                height: '100%',
+                backgroundColor: strengthBgColors[strength],
+                transition: 'all var(--transition-fast)',
+              }}
+            />
           </div>
-          <span style={{ fontSize: '11px', color: strengthColor }}>{strengthLabel}</span>
+          <span style={{ fontSize: '11px', fontWeight: 500, color: strengthColors[strength] }}>
+            {strengthLabel}
+          </span>
         </div>
       )}
-      {error && <p id={`${id}-error`} style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{error}</p>}
+      {error && (
+        <p id={`${id}-error`} style={{ color: 'var(--error-text)', fontSize: '12px', marginTop: '4px' }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

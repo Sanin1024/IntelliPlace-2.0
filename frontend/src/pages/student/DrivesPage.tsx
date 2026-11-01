@@ -454,10 +454,10 @@ const tabsContainerStyle: React.CSSProperties = {
 
 const tabStyle: React.CSSProperties = {
   padding: '8px 14px',
-  borderRadius: '8px',
-  border: '1px solid #cbd5e1',
-  background: '#ffffff',
-  color: '#475569',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--text-secondary)',
   fontSize: '13px',
   fontWeight: 600,
   cursor: 'pointer',
@@ -465,9 +465,9 @@ const tabStyle: React.CSSProperties = {
 
 const activeTabStyle: React.CSSProperties = {
   ...tabStyle,
-  background: '#2563eb',
-  borderColor: '#2563eb',
-  color: '#ffffff',
+  background: 'var(--nav-active-bg)',
+  borderColor: 'var(--nav-active-bg)',
+  color: 'var(--nav-active-text)',
 };
 
 const searchInputStyle: React.CSSProperties = {
@@ -487,11 +487,11 @@ const driveListStyle: React.CSSProperties = {
 };
 
 const driveCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
   padding: '20px',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+  boxShadow: 'var(--shadow-card)',
   boxSizing: 'border-box',
   width: '100%',
 };
@@ -662,10 +662,10 @@ const roundsGridStyle: React.CSSProperties = {
 };
 
 const roundCardStyle: React.CSSProperties = {
-  border: '1px solid #e2e8f0',
-  borderRadius: '6px',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '8px 10px',
-  backgroundColor: '#ffffff',
+  backgroundColor: 'var(--surface)',
 };
 
 const actionsRowStyle: React.CSSProperties = {
@@ -754,30 +754,30 @@ const confirmWithdrawBtnStyle: React.CSSProperties = {
 };
 
 const cancelWithdrawBtnStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  color: '#475569',
-  border: '1px solid #cbd5e1',
+  backgroundColor: 'var(--surface)',
+  color: 'var(--text-secondary)',
+  border: '1px solid var(--border)',
   padding: '6px 12px',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-sm)',
   fontSize: '12px',
   cursor: 'pointer',
 };
 
 const cancelledBannerStyle: React.CSSProperties = {
-  backgroundColor: '#fef2f2',
-  color: '#991b1b',
-  border: '1px solid #fecaca',
-  borderRadius: '6px',
+  backgroundColor: 'var(--error-bg)',
+  color: 'var(--error-text)',
+  border: '1px solid var(--error-border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '8px 12px',
   fontSize: '13px',
   marginBottom: '12px',
 };
 
 const withdrawnBannerStyle: React.CSSProperties = {
-  backgroundColor: '#fffbeb',
-  color: '#92400e',
-  border: '1px solid #fde68a',
-  borderRadius: '6px',
+  backgroundColor: 'var(--warning-bg)',
+  color: 'var(--warning-text)',
+  border: '1px solid var(--warning-border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '8px 12px',
   fontSize: '13px',
   marginBottom: '12px',
@@ -786,13 +786,13 @@ const withdrawnBannerStyle: React.CSSProperties = {
 const loadingBoxStyle: React.CSSProperties = {
   textAlign: 'center',
   padding: '40px',
-  color: '#64748b',
+  color: 'var(--text-muted)',
 };
 
 const emptyCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
   padding: '40px',
   textAlign: 'center',
 };

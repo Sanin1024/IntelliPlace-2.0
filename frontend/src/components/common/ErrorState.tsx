@@ -14,42 +14,34 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   return (
     <div
       role="alert"
+      className="fade-in"
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '36px 20px',
-        backgroundColor: '#fff5f5',
-        borderRadius: '12px',
-        border: '1px solid #fed7d7',
+        backgroundColor: 'var(--error-bg)',
+        borderRadius: 'var(--radius-sm)',
+        border: '1px solid var(--error-border)',
         textAlign: 'center',
         margin: '16px 0',
       }}
     >
-      <div style={{ fontSize: '32px', color: '#e53e3e', marginBottom: '8px' }}>⚠</div>
-      <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#9b2c2c', margin: '0 0 6px 0' }}>
+      <div style={{ fontSize: '28px', color: 'var(--error-text)', marginBottom: '8px' }}>⚠</div>
+      <h3 style={{ fontSize: '16px', fontWeight: 500, color: 'var(--error-text)', margin: '0 0 6px 0' }}>
         {title}
       </h3>
-      <p style={{ fontSize: '14px', color: '#c53030', maxWidth: '400px', lineHeight: 1.5, marginBottom: onRetry ? '16px' : '0' }}>
+      <p style={{ fontSize: '14px', color: 'var(--error-text)', maxWidth: '400px', lineHeight: 1.5, opacity: 0.9, marginBottom: onRetry ? '16px' : '0' }}>
         {message}
       </p>
       {onRetry && (
         <button
           onClick={onRetry}
-          style={{
-            padding: '8px 18px',
-            backgroundColor: '#e53e3e',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            minHeight: '40px',
-          }}
+          className="btn btn-danger btn-sm"
+          style={{ marginTop: '8px' }}
         >
-          🔄 Try Again
+          Try Again
         </button>
       )}
     </div>

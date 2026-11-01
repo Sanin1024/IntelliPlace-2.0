@@ -1,0 +1,45 @@
+/* ============================================================
+   BONSAI BY ZOOM — DESIGN TOKENS
+   Shape, Spacing, Transitions, and Brand Constants
+   ============================================================ */
+
+:root {
+  /* Brand Constants */
+  --brand-black: #000000;
+  --brand-white: #FFFFFF;
+  --brand-secondary-black: #222222;
+  --brand-indigo: #6366F1;
+  --brand-warm-neutral: #F5F3EF;
+  --brand-surface-white: #FFFFFF;
+  --brand-muted-text: #6B6B6B;
+  --brand-border: #E8E4DD;
+  --brand-success: #22C55E;
+  --brand-error: #EF4444;
+
+  /* Border Radius */
+  --radius-none: 0px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spacing Scale */
+  --spacing-xs: 10px;
+  --spacing-sm: 20px;
+  --spacing-md: 36px;
+  --spacing-lg: 48px;
+  --spacing-xl: 96px;
+
+  /* Compact Spacing for Dense Components */
+  --spacing-2xs: 4px;
+  --spacing-3xs: 2px;
+  --spacing-dense-sm: 8px;
+  --spacing-dense-md: 16px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+

@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { forgotPassword } from '../../api/auth';
+import ThemeToggle from '../../theme/ThemeToggle';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -39,200 +40,165 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={styles.iconCircle}>
-            <Mail size={24} color="#4f46e5" />
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        backgroundColor: 'var(--bg)',
+        position: 'relative',
+      }}
+    >
+      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+        <ThemeToggle />
+      </div>
+
+      <div
+        className="card fade-in"
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: 'var(--surface)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-dropdown)',
+          padding: '40px',
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--surface-muted)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+              color: 'var(--accent)',
+            }}
+          >
+            <Mail size={22} />
           </div>
-          <h1 style={styles.title}>Forgot Password</h1>
-          <p style={styles.subtitle}>
-            Enter your university registered email to receive password reset instructions.
+          <h1
+            style={{
+              fontSize: '22px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              margin: '0 0 6px 0',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Forgot Password
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            Enter your registered university email to receive password reset instructions.
           </p>
         </div>
 
         {errorMessage && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={18} />
+          <div
+            role="alert"
+            className="alert alert-error"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '16px' }}
+          >
+            <AlertCircle size={16} />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage ? (
-          <div style={styles.successBox}>
-            <CheckCircle2 size={24} color="#16a34a" />
-            <div>
-              <p style={{ fontWeight: 600, color: '#15803d', margin: 0 }}>Reset Request Processed</p>
-              <p style={{ fontSize: '13px', color: '#166534', marginTop: '4px' }}>
-                {successMessage}
-              </p>
-              {devResetToken && (
-                <div style={styles.devBox}>
-                  <p style={{ margin: 0, fontWeight: 600 }}>Development Mode Token:</p>
-                  <code style={{ wordBreak: 'break-all', fontSize: '12px' }}>{devResetToken}</code>
-                  <div style={{ marginTop: '8px' }}>
-                    <Link
-                      to={`/reset-password?token=${devResetToken}`}
-                      style={{ color: '#4f46e5', fontWeight: 600, textDecoration: 'underline' }}
-                    >
-                      Click here to reset your password directly
-                    </Link>
-                  </div>
-                </div>
-              )}
+          <div>
+            <div
+              className="alert alert-success"
+              style={{ display: 'flex', gap: '12px', padding: '16px', marginBottom: '16px' }}
+            >
+              <CheckCircle2 size={20} style={{ color: 'var(--success-text)', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--success-text)', margin: 0 }}>
+                  Request Received
+                </p>
+                <p style={{ fontSize: '13px', color: 'var(--success-text)', marginTop: '4px', lineHeight: 1.4, opacity: 0.9 }}>
+                  {successMessage}
+                </p>
+              </div>
             </div>
+
+            {devResetToken && (
+              <div
+                style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: 'var(--surface-muted)',
+                  border: '1px dashed var(--accent)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-text)', margin: '0 0 4px' }}>
+                  DEV ONLY — DIRECT RESET LINK:
+                </p>
+                <Link
+                  to={`/reset-password?token=${devResetToken}`}
+                  style={{ fontSize: '12px', color: 'var(--accent-text)', wordBreak: 'break-all' }}
+                >
+                  Click here to set new password
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.field}>
-              <label htmlFor="email" style={styles.label}>
-                Registered Email Address
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div>
+              <label
+                htmlFor="email"
+                style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}
+              >
+                Registered Email
               </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu"
+                placeholder="you@example.com"
                 required
                 disabled={isLoading}
-                style={styles.input}
+                className="input-field"
               />
             </div>
 
-            <button type="submit" disabled={isLoading} style={styles.button}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+            >
               {isLoading ? 'Submitting...' : 'Send Reset Link'}
             </button>
           </form>
         )}
 
-        <div style={styles.footer}>
-          <Link to="/login" style={styles.backLink}>
-            <ArrowLeft size={16} /> Back to Sign In
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <Link
+            to="/login"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--text-muted)',
+              fontSize: '13px',
+              textDecoration: 'none',
+              fontWeight: 500,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Sign In
           </Link>
         </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    backgroundColor: '#f8fafc',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '440px',
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.08)',
-    padding: '36px',
-  },
-  header: {
-    textAlign: 'center',
-    marginBottom: '24px',
-  },
-  iconCircle: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    backgroundColor: '#eef2ff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 16px',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: 700,
-    color: '#0f172a',
-    margin: 0,
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    marginTop: '8px',
-    lineHeight: 1.5,
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#334155',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '14px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  button: {
-    padding: '12px',
-    borderRadius: '8px',
-    backgroundColor: '#4f46e5',
-    color: '#ffffff',
-    fontSize: '14px',
-    fontWeight: 600,
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    backgroundColor: '#fef2f2',
-    color: '#b91c1c',
-    padding: '12px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    marginBottom: '16px',
-  },
-  successBox: {
-    display: 'flex',
-    gap: '12px',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    padding: '16px',
-    borderRadius: '8px',
-    marginBottom: '16px',
-  },
-  devBox: {
-    marginTop: '12px',
-    padding: '10px',
-    backgroundColor: '#ffffff',
-    border: '1px dashed #4f46e5',
-    borderRadius: '6px',
-  },
-  footer: {
-    marginTop: '24px',
-    textAlign: 'center',
-  },
-  backLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#64748b',
-    fontSize: '14px',
-    textDecoration: 'none',
-    fontWeight: 500,
-  },
-};
-

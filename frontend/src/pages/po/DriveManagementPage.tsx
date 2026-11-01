@@ -824,22 +824,22 @@ const primaryBtnStyle: React.CSSProperties = {
 };
 
 const cancelBtnStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  color: '#475569',
-  border: '1px solid #cbd5e1',
+  backgroundColor: 'var(--surface)',
+  color: 'var(--text-secondary)',
+  border: '1px solid var(--border)',
   padding: '9px 18px',
-  borderRadius: '8px',
+  borderRadius: 'var(--radius-sm)',
   fontSize: '13px',
   cursor: 'pointer',
 };
 
 const formCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  border: '1px solid #e2e8f0',
-  borderRadius: '12px',
+  backgroundColor: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '20px',
   marginBottom: '24px',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+  boxShadow: 'var(--shadow-card)',
   boxSizing: 'border-box',
   width: '100%',
 };
@@ -943,9 +943,9 @@ const dangerBtnStyle: React.CSSProperties = {
 };
 
 const tableContainerStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
   overflowX: 'auto',
   boxSizing: 'border-box',
   width: '100%',
@@ -1067,48 +1067,50 @@ const modalBackdropStyle: React.CSSProperties = {
 };
 
 const modalBoxStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-lg)',
   padding: '24px',
   maxWidth: '500px',
   width: '100%',
   boxSizing: 'border-box',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--shadow-modal)',
 };
 
 const warningBoxStyle: React.CSSProperties = {
-  backgroundColor: '#fffbeb',
-  border: '1px solid #fde68a',
-  borderRadius: '8px',
+  backgroundColor: 'var(--warning-bg)',
+  border: '1px solid var(--warning-border)',
+  borderRadius: 'var(--radius-sm)',
   padding: '12px',
-  color: '#92400e',
+  color: 'var(--warning-text)',
   fontSize: '13px',
   marginBottom: '14px',
 };
 
 const successAlertStyle: React.CSSProperties = {
-  backgroundColor: '#ecfdf5',
-  color: '#065f46',
-  border: '1px solid #a7f3d0',
+  backgroundColor: 'var(--success-bg)',
+  color: 'var(--success-text)',
+  border: '1px solid var(--success-border)',
   padding: '10px 14px',
-  borderRadius: '8px',
+  borderRadius: 'var(--radius-sm)',
   fontSize: '14px',
   marginBottom: '16px',
 };
 
 const errorAlertStyle: React.CSSProperties = {
-  backgroundColor: '#fef2f2',
-  color: '#991b1b',
-  border: '1px solid #fecaca',
+  backgroundColor: 'var(--error-bg)',
+  color: 'var(--error-text)',
+  border: '1px solid var(--error-border)',
   padding: '10px 14px',
-  borderRadius: '8px',
+  borderRadius: 'var(--radius-sm)',
   fontSize: '14px',
   marginBottom: '16px',
 };
 
 const emptyCardStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: '1px solid #e2e8f0',
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
   padding: '40px',
   textAlign: 'center',
 };

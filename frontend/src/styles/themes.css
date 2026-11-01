@@ -1,0 +1,238 @@
+/* ============================================================
+   BONSAI BY ZOOM — THEMES & PALETTES
+   Light Mode & Dark Mode Semantic Colors, Status, and Elevation
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   LIGHT MODE (Default & [data-theme="light"])
+   ------------------------------------------------------------ */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds & Surfaces */
+  --bg: #FAFAF8;
+  --bg-subtle: #F5F3EF;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-muted: #F7F6F2;
+  --surface-hover: #F1EFEA;
+  --surface-selected: #F0F0FF;
+
+  /* Typography */
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --text-muted: #6B6B6B;
+  --text-placeholder: #92908B;
+  --text-disabled: #A8A8A8;
+
+  /* Borders */
+  --border: #E8E4DD;
+  --border-strong: #D8D2C8;
+  --border-focus: #6366F1;
+
+  /* Brand & Accent */
+  --accent: #6366F1;
+  --accent-hover: #5558D9;
+  --accent-text: #4F46E5;
+  --accent-soft: #EEF0FF;
+  --accent-border: #C7CCFF;
+
+  /* Primary Button */
+  --btn-primary-bg: #000000;
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-hover: #222222;
+  --btn-primary-active: #333333;
+  --btn-primary-disabled: #D6D3D1;
+
+  /* Secondary Button */
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #222222;
+  --btn-secondary-hover: #F5F3EF;
+  --btn-secondary-border: #E8E4DD;
+
+  /* Navigation */
+  --nav-bg: #FAFAF8;
+  --nav-text: #6B6B6B;
+  --nav-hover-bg: #F5F3EF;
+  --nav-hover-text: #222222;
+  --nav-active-bg: #000000;
+  --nav-active-text: #FFFFFF;
+
+  /* Inputs */
+  --input-bg: #FFFFFF;
+  --input-text: #000000;
+  --input-placeholder: #92908B;
+  --input-border: #E8E4DD;
+  --input-hover-border: #C8C2B7;
+  --input-focus-border: #6366F1;
+  --input-disabled-bg: #F5F3EF;
+
+  /* Semantic Status Colors */
+  --success: #166534;
+  --success-text: #166534;
+  --success-bg: #ECFDF3;
+  --success-border: #BBF7D0;
+
+  --warning: #B45309;
+  --warning-text: #B45309;
+  --warning-bg: #FFF7ED;
+  --warning-border: #FED7AA;
+
+  --error: #B91C1C;
+  --error-text: #B91C1C;
+  --error-bg: #FEF2F2;
+  --error-border: #FECACA;
+
+  --info: #1D4ED8;
+  --info-text: #1D4ED8;
+  --info-bg: #EFF6FF;
+  --info-border: #BFDBFE;
+
+  /* Elevation & Shadows */
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.035);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 16px 40px rgba(0, 0, 0, 0.12);
+
+  /* Role Indicators */
+  --color-role-admin: #6366F1;
+  --color-role-po: #0D9488;
+  --color-role-trainer: #D97706;
+  --color-role-student: #2563EB;
+
+  /* Backward Compatibility Aliases */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-primary: var(--accent);
+  --color-primary-hover: var(--accent-hover);
+  --color-primary-light: var(--accent-soft);
+  --color-on-primary: var(--btn-primary-text);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--error);
+  --color-info: var(--info);
+  --shadow-sm: var(--shadow-card);
+  --shadow-md: var(--shadow-dropdown);
+  --shadow-lg: var(--shadow-modal);
+}
+
+/* ------------------------------------------------------------
+   DARK MODE ([data-theme="dark"])
+   ------------------------------------------------------------ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds & Surfaces (Layered Charcoal) */
+  --bg: #111111;
+  --bg-subtle: #171716;
+  --surface: #191918;
+  --surface-raised: #20201F;
+  --surface-muted: #242422;
+  --surface-hover: #2A2926;
+  --surface-selected: #29284A;
+
+  /* Typography */
+  --text-primary: #F5F5F4;
+  --text-secondary: #D6D3D1;
+  --text-muted: #A1A1AA;
+  --text-placeholder: #858585;
+  --text-disabled: #696969;
+
+  /* Borders */
+  --border: #302F2C;
+  --border-strong: #46433E;
+  --border-focus: #818CF8;
+
+  /* Brand & Accent */
+  --accent: #818CF8;
+  --accent-hover: #A5B4FC;
+  --accent-text: #A5B4FC;
+  --accent-soft: #242449;
+  --accent-border: #454779;
+
+  /* Primary Button */
+  --btn-primary-bg: #F5F5F4;
+  --btn-primary-text: #111111;
+  --btn-primary-hover: #E7E5E4;
+  --btn-primary-active: #D6D3D1;
+  --btn-primary-disabled: #333333;
+
+  /* Secondary Button */
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #E7E5E4;
+  --btn-secondary-hover: #262522;
+  --btn-secondary-border: #44403C;
+
+  /* Navigation */
+  --nav-bg: #111111;
+  --nav-text: #A1A1AA;
+  --nav-hover-bg: #232321;
+  --nav-hover-text: #F5F5F4;
+  --nav-active-bg: #F5F5F4;
+  --nav-active-text: #111111;
+
+  /* Inputs */
+  --input-bg: #191918;
+  --input-text: #F5F5F4;
+  --input-placeholder: #858585;
+  --input-border: #302F2C;
+  --input-hover-border: #58564F;
+  --input-focus-border: #818CF8;
+  --input-disabled-bg: #242422;
+
+  /* Semantic Status Colors */
+  --success: #86EFAC;
+  --success-text: #86EFAC;
+  --success-bg: #14291D;
+  --success-border: #245A37;
+
+  --warning: #FCD34D;
+  --warning-text: #FCD34D;
+  --warning-bg: #332610;
+  --warning-border: #6B4A17;
+
+  --error: #FCA5A5;
+  --error-text: #FCA5A5;
+  --error-bg: #341B1B;
+  --error-border: #713131;
+
+  --info: #93C5FD;
+  --info-text: #93C5FD;
+  --info-bg: #142638;
+  --info-border: #244A6B;
+
+  /* Elevation & Shadows */
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.20);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.30);
+  --shadow-modal: 0 16px 40px rgba(0, 0, 0, 0.40);
+
+  /* Role Indicators */
+  --color-role-admin: #A5B4FC;
+  --color-role-po: #2DD4BF;
+  --color-role-trainer: #FBBF24;
+  --color-role-student: #60A5FA;
+
+  /* Backward Compatibility Aliases */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-primary: var(--accent);
+  --color-primary-hover: var(--accent-hover);
+  --color-primary-light: var(--accent-soft);
+  --color-on-primary: var(--btn-primary-text);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--error);
+  --color-info: var(--info);
+  --shadow-sm: var(--shadow-card);
+  --shadow-md: var(--shadow-dropdown);
+  --shadow-lg: var(--shadow-modal);
+}
+

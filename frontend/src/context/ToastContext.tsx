@@ -6,6 +6,7 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
+import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -85,68 +86,93 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, [showToast]);
 
-  const styles: Record<string, React.CSSProperties> = {
-    container: {
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      zIndex: 9999,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-      maxWidth: '380px',
-      width: 'calc(100% - 40px)',
-      pointerEvents: 'none',
-    },
-    toast: {
-      padding: '12px 20px',
-      borderRadius: 'var(--radius-md)',
-      color: '#fff',
-      fontWeight: 600,
-      fontSize: '14px',
-      boxShadow: 'var(--shadow-lg)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '12px',
-      pointerEvents: 'auto',
-      wordBreak: 'break-word',
-    },
-    success: { background: 'var(--color-success)' },
-    error: { background: 'var(--color-danger)' },
-    info: { background: 'var(--color-info)' },
-    warning: { background: 'var(--color-warning)' },
+  const getIcon = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle2 size={18} style={{ color: 'var(--success-text)', flexShrink: 0 }} />;
+      case 'error':
+        return <XCircle size={18} style={{ color: 'var(--error-text)', flexShrink: 0 }} />;
+      case 'warning':
+        return <AlertTriangle size={18} style={{ color: 'var(--warning-text)', flexShrink: 0 }} />;
+      default:
+        return <Info size={18} style={{ color: 'var(--info-text)', flexShrink: 0 }} />;
+    }
+  };
+
+  const getBorderColor = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return 'var(--success-border)';
+      case 'error':
+        return 'var(--error-border)';
+      case 'warning':
+        return 'var(--warning-border)';
+      default:
+        return 'var(--info-border)';
+    }
   };
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, showToast, removeToast }}>
       {children}
-      <div style={styles.container} aria-live="assertive" aria-atomic="true">
+      <div
+        style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          maxWidth: '400px',
+          width: 'calc(100% - 40px)',
+          pointerEvents: 'none',
+        }}
+        aria-live="assertive"
+        aria-atomic="true"
+      >
         {toasts.map((item) => (
           <div
             key={item.id}
             className="slide-in-right"
             style={{
-              ...styles.toast,
-              background: styles[item.type]?.background || 'var(--color-primary)',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--surface)',
+              border: `1px solid ${getBorderColor(item.type)}`,
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontWeight: 500,
+              boxShadow: 'var(--shadow-dropdown)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              pointerEvents: 'auto',
+              wordBreak: 'break-word',
             }}
           >
-            <span>{item.message}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {getIcon(item.type)}
+              <span>{item.message}</span>
+            </div>
             <button
               onClick={() => removeToast(item.id)}
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#fff',
+                color: 'var(--text-muted)',
                 cursor: 'pointer',
-                fontSize: '16px',
-                padding: '0 4px',
-                lineHeight: 1,
-                opacity: 0.8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2px',
+                borderRadius: 'var(--radius-none)',
+                transition: 'color var(--transition-fast)',
               }}
               aria-label="Dismiss toast"
             >
-              &times;
+              <X size={15} />
             </button>
           </div>
         ))}
