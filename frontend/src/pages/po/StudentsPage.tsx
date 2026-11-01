@@ -118,26 +118,27 @@ export default function StudentsPage() {
       <div style={{ display: 'flex', gap: '10px', marginTop: '24px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <input
           type="text"
+          aria-label="Search by name or email"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Search by name or email..."
           style={{ ...inp, flex: 1, minWidth: '200px' }}
         />
-        <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)} style={{...inp, width: '140px'}}>
+        <select aria-label="Filter by branch" value={filterBranch} onChange={e => setFilterBranch(e.target.value)} style={{...inp, width: '140px'}}>
           <option value="">All branches</option>
           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
-        <select value={filterBatch} onChange={e => setFilterBatch(e.target.value)} style={{...inp, width: '120px'}}>
+        <select aria-label="Filter by batch" value={filterBatch} onChange={e => setFilterBatch(e.target.value)} style={{...inp, width: '120px'}}>
           <option value="">All batches</option>
           {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{...inp, width: '140px'}}>
+        <select aria-label="Filter by status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{...inp, width: '140px'}}>
           <option value="">All statuses</option>
           <option value="not_placed">Not Placed</option>
           <option value="in_process">In Process</option>
           <option value="placed">Placed</option>
         </select>
-        <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)} style={{...inp, width: '140px'}}>
+        <select aria-label="Filter by level" value={filterLevel} onChange={e => setFilterLevel(e.target.value)} style={{...inp, width: '140px'}}>
           <option value="">All levels</option>
           <option value="beginner">Beginner</option>
           <option value="intermediate">Intermediate</option>
@@ -146,7 +147,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Student Table */}
-      <div style={{ overflowX: 'auto' }}>
+      <div tabIndex={0} aria-label="Student Management Table" style={{ overflowX: 'auto' }}>
         <table style={table}>
           <thead>
             <tr>
@@ -170,6 +171,11 @@ export default function StudentsPage() {
                 <tr key={s.studentId} style={{ cursor: 'pointer' }} onClick={() => navigate(`/po/students/${s.studentId}`)}>
                   <td style={td}>
                     <strong>{s.name}</strong>
+                    {s.ktuid && (
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: '#6366f1', fontWeight: 600, background: '#eef2ff', padding: '2px 6px', borderRadius: '4px' }}>
+                        {s.ktuid}
+                      </span>
+                    )}
                     <br />
                     <span style={{ fontSize: '11px', color: '#94a3b8' }}>{s.email}</span>
                   </td>
@@ -194,12 +200,13 @@ export default function StudentsPage() {
                   </td>
                   <td style={td} onClick={e => e.stopPropagation()}>
                     <select
+                      aria-label={`Placement status for ${s.name}`}
                       value={s.placementStatus}
                       onChange={e => handleStatusChange(s.studentId, e.target.value)}
                       style={{
                         padding: '4px 8px', borderRadius: '6px', border: '1px solid #e2e8f0',
                         fontSize: '12px', fontWeight: 600, background: sc.bg, color: sc.color,
-                        cursor: 'pointer',
+                        cursor: 'pointer', minHeight: '40px',
                       }}
                     >
                       <option value="not_placed">Not Placed</option>
@@ -230,10 +237,10 @@ export default function StudentsPage() {
   );
 }
 
-const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' };
+const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', minHeight: '40px', boxSizing: 'border-box' };
 const statCard: React.CSSProperties = { background: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'center' };
 const table: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '10px', overflow: 'hidden' };
 const th: React.CSSProperties = { textAlign: 'left', padding: '12px 14px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: '12px', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '10px 14px', borderBottom: '1px solid #f1f5f9', fontSize: '13px', verticalAlign: 'middle' };
-const btnSmall: React.CSSProperties = { padding: '4px 12px', background: '#dbeafe', color: '#1e40af', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 };
+const btnSmall: React.CSSProperties = { padding: '8px 14px', minHeight: '40px', display: 'inline-flex', alignItems: 'center', background: '#dbeafe', color: '#1e40af', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 };
 const errAlert: React.CSSProperties = { padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', background: '#fee2e2', color: '#dc2626' };

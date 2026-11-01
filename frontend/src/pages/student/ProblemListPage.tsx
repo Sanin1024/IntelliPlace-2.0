@@ -42,11 +42,11 @@ export default function ProblemListPage() {
       <p style={{ color: '#64748b' }}>Click a problem to view details, sample I/O, and test cases.</p>
 
       <div style={{ display: 'flex', gap: '12px', marginTop: '16px', marginBottom: '24px' }}>
-        <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
+        <select aria-label="Filter by topic" value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
           <option value="">All topics</option>
           {codingTopics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <select value={filterDifficulty} onChange={e => setFilterDifficulty(e.target.value)} style={{...inp, width: '150px'}}>
+        <select aria-label="Filter by difficulty" value={filterDifficulty} onChange={e => setFilterDifficulty(e.target.value)} style={{...inp, width: '150px'}}>
           <option value="">All difficulties</option>
           <option value="easy">Easy</option>
           <option value="medium">Medium</option>

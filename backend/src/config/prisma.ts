@@ -17,3 +17,4 @@ export const prisma = new PrismaClient({
 });
 
 export { Prisma, Role };
+export * from "../generated/prisma/enums.js";

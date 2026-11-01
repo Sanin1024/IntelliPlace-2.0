@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { resourceApi } from '../../api/resource';
 import { publicApi } from '../../api/admin';
+import { trainingApi } from '../../api/training';
 import type { Resource } from '../../api/resource';
 
 export default function ResourcesPage() {
@@ -53,16 +54,17 @@ export default function ResourcesPage() {
       <div style={{ display: 'flex', gap: '12px', marginTop: '20px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <input
           type="text"
+          aria-label="Search resources"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Search resources..."
           style={{ ...inp, flex: 1, minWidth: '200px' }}
         />
-        <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
+        <select aria-label="Filter by topic" value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
           <option value="">All topics</option>
           {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <select value={filterType} onChange={e => { setFilterType(e.target.value); }} style={{...inp, width: '150px'}}>
+        <select aria-label="Filter by type" value={filterType} onChange={e => { setFilterType(e.target.value); }} style={{...inp, width: '150px'}}>
           <option value="">All types</option>
           <option value="pdf">PDF</option>
           <option value="video">Videos</option>
@@ -94,7 +96,8 @@ export default function ResourcesPage() {
                 onClick={async () => {
                   try {
                     const token = localStorage.getItem('token');
-                    const res = await fetch(`http://localhost:4000/api/resources/${r.id}/download`, {
+                    const downloadEndpoint = trainingApi.downloadUrl(r.id);
+                    const res = await fetch(downloadEndpoint, {
                       headers: token ? { Authorization: `Bearer ${token}` } : {},
                     });
                     if (!res.ok) throw new Error('Download failed');

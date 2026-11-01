@@ -2,6 +2,7 @@ import api from './client';
 
 export interface StudentRow {
   studentId: string;
+  ktuid?: string | null;
   name: string;
   email: string;
   branch: string | null;

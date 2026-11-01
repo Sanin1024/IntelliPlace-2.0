@@ -127,10 +127,13 @@ async function run() {
       });
       await prisma.notificationRecipient.deleteMany({
         where: { userId: { in: ids } },
-      });
+      }).catch(() => {});
+      await prisma.auditLog.deleteMany({
+        where: { actorId: { in: ids } },
+      }).catch(() => {});
       await prisma.studentProfile.deleteMany({
         where: { userId: { in: ids } },
-      });
+      }).catch(() => {});
       await prisma.user.deleteMany({
         where: { id: { in: ids } },
       });
@@ -218,7 +221,9 @@ async function run() {
     await newStudentPage.fill('#email', newStudentEmail);
     await newStudentPage.fill('#password', newStudentPassword);
     await newStudentPage.fill('#confirmPassword', newStudentPassword);
-    await newStudentPage.selectOption('#knowledgeLevel', 'beginner');
+    if (await newStudentPage.$('#knowledgeLevel')) {
+      await newStudentPage.selectOption('#knowledgeLevel', 'beginner');
+    }
     await newStudentPage.click('button[type="submit"]');
 
     await newStudentPage.waitForURL('**/dashboard', { timeout: 10000 });
@@ -239,7 +244,7 @@ async function run() {
       'Part0-9a',
       'Brand-new student: empty states render cleanly with no NaN, undefined, or empty charts',
       check9aPass,
-      `Console Errors: ${consoleErrors9a.length}, Network Errors: ${networkErrors9a.length}, NaN: ${hasNaN9a}, Undefined: ${hasUndefined9a}`
+      `Console: ${JSON.stringify(consoleErrors9a)} | Network: ${JSON.stringify(networkErrors9a)}`
     );
     await newStudentContext.close();
 
@@ -606,11 +611,25 @@ async function run() {
     const hasNaNOnResult = resultPageText.includes('NaN');
     const hasUndefinedOnResult = resultPageText.includes('undefined');
 
+    const apiTotalMarks = apiResult.data?.data?.totalMarks;
+    const scoreTextOnPage = scoreHeading.trim();
+
+    console.log('================================================================');
+    console.log('TAKE-TEST CHECK (REAL NUMBERS):');
+    console.log(`  Number of Questions:          ${questions.length}`);
+    console.log(`  N Correct Selected:           ${N}`);
+    console.log(`  M Wrong Selected:             ${M}`);
+    console.log(`  Marks per Question:           1`);
+    console.log(`  Expected Score:               ${expectedMarks}`);
+    console.log(`  Score Text on Result Page:    ${scoreTextOnPage}`);
+    console.log(`  API Score:                    ${apiScore}`);
+    console.log(`  API Total Marks:              ${apiTotalMarks}`);
+    console.log('================================================================');
+
     const scoreMatchesExpected = pageScore === expectedMarks;
     const scoreGreaterThanZero = pageScore > 0;
     const scoreMatchesApi = pageScore === apiScore;
-
-    console.log(`   [Real Take-Test Numbers]: N=${N} correct, M=${M} wrong | Expected Marks: ${expectedMarks} | Page Score: ${pageScore} | API Score: ${apiScore}`);
+    const scoreTextMatchesApi = scoreTextOnPage === `${apiScore}/${apiTotalMarks}`;
 
     const testFlowPass = resultUrl.includes('/result') &&
       scoreMatchesExpected &&

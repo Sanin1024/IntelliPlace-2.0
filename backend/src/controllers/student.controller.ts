@@ -3,6 +3,10 @@ import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import { ensureStudentOwnership } from '../utils/ownership.js';
 import { calculateStudentReadiness } from '../services/readiness.js';
+import { getAcademicContext, computeCgpa } from '../services/academic.service.js';
+import { reevaluateStudentForAppliedDrives } from '../services/eligibilityEngine.service.js';
+import { audit } from '../services/audit.service.js';
+import { logDataAccess } from '../services/privacy.service.js';
 
 /**
  * GET /api/students/me
@@ -21,10 +25,21 @@ export const getMyProfile = async (req: Request, res: Response, next: NextFuncti
           select: {
             knowledgeLevel: true,
             cgpa: true,
+            cgpaVerified: true,
+            academicStatus: true,
+            universityId: true,
+            ktuid: true,
+            entryType: true,
+            admissionYear: true,
+            graduatingBatch: true,
+            academicScheme: true,
+            currentSemester: true,
+            academicUpdatedAt: true,
+            profileUpdatedAt: true,
             placementStatus: true,
             resumeUrl: true,
             targetRole: true,
-            branch: { select: { id: true, name: true } },
+            branch: { select: { id: true, name: true, code: true } },
             batch: { select: { id: true, name: true, graduationYear: true } },
           },
         },
@@ -44,12 +59,32 @@ export const getMyProfile = async (req: Request, res: Response, next: NextFuncti
 
 /**
  * PUT /api/students/me
- * Update own profile
+ * Update own profile (Challenge 32: Self-service vs restricted field governance)
  */
 export const updateMyProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const { name, branchId, batchId, knowledgeLevel, cgpa, resumeUrl, targetRole } = req.body;
+    const { name, branchId, batchId, knowledgeLevel, cgpa, resumeUrl, targetRole, universityId, admissionYear } = req.body;
+
+    const currentProfile = await prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!currentProfile) throw ApiError.notFound('Profile not found');
+
+    // Challenge 32: If verified, restricted academic fields cannot be changed via regular profile update
+    const isRestrictedLocked = currentProfile.academicStatus === 'verified';
+    if (isRestrictedLocked) {
+      if (branchId !== undefined && branchId !== currentProfile.branchId) {
+        throw ApiError.badRequest('Branch cannot be edited directly after verification. Please submit a Profile Correction Request.');
+      }
+      if (batchId !== undefined && batchId !== currentProfile.batchId) {
+        throw ApiError.badRequest('Batch cannot be edited directly after verification. Please submit a Profile Correction Request.');
+      }
+      if (universityId !== undefined && universityId !== currentProfile.universityId) {
+        throw ApiError.badRequest('University ID cannot be edited directly after verification. Please submit a Profile Correction Request.');
+      }
+    }
 
     // Validate branch/batch exist if provided
     if (branchId) {
@@ -70,13 +105,24 @@ export const updateMyProfile = async (req: Request, res: Response, next: NextFun
     }
 
     // Build profile update data
-    const profileData: any = {};
+    const profileData: any = {
+      profileUpdatedAt: new Date(),
+    };
     if (branchId !== undefined) profileData.branchId = branchId;
     if (batchId !== undefined) profileData.batchId = batchId;
     if (knowledgeLevel) profileData.knowledgeLevel = knowledgeLevel;
-    if (cgpa !== undefined) profileData.cgpa = cgpa;
     if (resumeUrl !== undefined) profileData.resumeUrl = resumeUrl;
     if (targetRole !== undefined) profileData.targetRole = targetRole;
+    if (admissionYear !== undefined) profileData.admissionYear = admissionYear;
+    if (universityId !== undefined) profileData.universityId = universityId ? universityId.trim().toUpperCase() : null;
+
+    // If student manually edits CGPA, reset verified status (Challenge 23)
+    if (cgpa !== undefined && cgpa !== currentProfile.cgpa) {
+      profileData.cgpa = cgpa;
+      profileData.cgpaVerified = false;
+      profileData.academicStatus = 'requires_correction';
+      profileData.academicUpdatedAt = new Date();
+    }
 
     const updated = await prisma.studentProfile.update({
       where: { userId },
@@ -84,6 +130,10 @@ export const updateMyProfile = async (req: Request, res: Response, next: NextFun
       select: {
         knowledgeLevel: true,
         cgpa: true,
+        cgpaVerified: true,
+        academicStatus: true,
+        universityId: true,
+        admissionYear: true,
         placementStatus: true,
         resumeUrl: true,
         targetRole: true,
@@ -92,8 +142,16 @@ export const updateMyProfile = async (req: Request, res: Response, next: NextFun
       },
     });
 
+    // Challenge 47: If CGPA changed, re-evaluate across all applied drives
+    if (cgpa !== undefined && cgpa !== currentProfile.cgpa) {
+      await reevaluateStudentForAppliedDrives(userId);
+    }
+
     res.json({ success: true, data: updated });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      throw ApiError.conflict('An account with this University ID already exists.');
+    }
     next(err);
   }
 };
@@ -102,13 +160,18 @@ export const updateMyProfile = async (req: Request, res: Response, next: NextFun
  * GET /api/students/:id
  * A student can only view their own data.
  * PO and Admin can view any student.
+ * Trainers see limited academic info (CGPA redacted - Challenge 255).
  */
 export const getStudentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
 
-    // Security check: students can only view their own profile
-    ensureStudentOwnership(req, id, 'You can only view your own profile');
+    // Security check: students can only view their own profile (Challenge 249/255)
+    if (req.user?.role === 'student' && id !== req.user.id) {
+      throw ApiError.forbidden('You can only view your own profile');
+    }
+
+    const isTrainer = req.user?.role === 'trainer';
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -120,11 +183,20 @@ export const getStudentById = async (req: Request, res: Response, next: NextFunc
         studentProfile: {
           select: {
             knowledgeLevel: true,
-            cgpa: true,
+            cgpa: !isTrainer, // Challenge 255: Hide CGPA from trainers
+            cgpaVerified: !isTrainer,
+            academicStatus: !isTrainer,
+            universityId: true,
+            ktuid: true,
+            entryType: true,
+            admissionYear: true,
+            graduatingBatch: true,
+            academicScheme: true,
+            currentSemester: true,
             placementStatus: true,
             resumeUrl: true,
             targetRole: true,
-            branch: { select: { id: true, name: true } },
+            branch: { select: { id: true, name: true, code: true } },
             batch: { select: { id: true, name: true, graduationYear: true } },
           },
         },
@@ -133,6 +205,26 @@ export const getStudentById = async (req: Request, res: Response, next: NextFunc
 
     if (!user) throw ApiError.notFound('Student not found');
     if (!user.studentProfile) throw ApiError.notFound('This user is not a student');
+
+    // Challenge 255: Field-level authorization - ensure sensitive academic fields are never leaked to trainers
+    if (isTrainer) {
+      delete (user.studentProfile as any).cgpa;
+      delete (user.studentProfile as any).cgpaVerified;
+      delete (user.studentProfile as any).academicStatus;
+    }
+
+    await audit(req.user!.id, 'student.profile_view', 'student_profile', id, 'success', {
+      viewerRole: req.user!.role,
+    });
+
+    // Challenge 326: Audit data access log for academic profile inspection
+    await logDataAccess(
+      req.user!.id,
+      id,
+      'academic_profile',
+      'view',
+      req.headers['x-request-id'] as string | undefined
+    );
 
     res.json({ success: true, data: user });
   } catch (err) {
@@ -429,3 +521,167 @@ export const getStudentDashboardSummary = async (req: Request, res: Response, ne
     next(err);
   }
 };
+
+/**
+ * GET /api/students/me/notification-preferences
+ */
+export const getNotificationPrefs = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await prisma.studentProfile.findUnique({
+      where: { userId: req.user!.id },
+      select: { notificationPrefs: true },
+    });
+    const defaultPrefs = { driveAlerts: true, deadlineReminders: true };
+    const prefs = (profile?.notificationPrefs as any) || defaultPrefs;
+    res.json({ success: true, data: { ...defaultPrefs, ...prefs } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/students/me/notification-preferences
+ */
+export const updateNotificationPrefs = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { driveAlerts, deadlineReminders } = req.body;
+    const profile = await prisma.studentProfile.update({
+      where: { userId: req.user!.id },
+      data: {
+        notificationPrefs: {
+          driveAlerts: driveAlerts ?? true,
+          deadlineReminders: deadlineReminders ?? true,
+        },
+      },
+      select: { notificationPrefs: true },
+    });
+    res.json({ success: true, data: profile.notificationPrefs });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Challenge 23, 24, 26, 27, 33: Student gets complete academic breakdown.
+ * GET /api/students/me/academic
+ */
+export const getMyAcademicInfo = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const studentId = req.user!.id;
+    const context = await getAcademicContext(studentId);
+
+    const [semesters, backlogsList, transfers, correctionRequests] = await Promise.all([
+      prisma.semesterResult.findMany({
+        where: { studentId },
+        orderBy: { semesterNumber: 'asc' },
+      }),
+      prisma.backlogRecord.findMany({
+        where: { studentId },
+        orderBy: { semester: 'asc' },
+      }),
+      prisma.studentTransfer.findMany({
+        where: { studentId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.profileCorrectionRequest.findMany({
+        where: { studentId },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const formattedSemesters = semesters.map((s) => ({
+      ...s,
+      sgpa: s.gpa,
+      credits: s.creditsEarned,
+    }));
+
+    const formattedBacklogs = {
+      activeCount: context.backlogs?.activeCount ?? backlogsList.filter((b) => b.status === 'active').length,
+      activeUnverified: backlogsList.filter((b) => b.status === 'active' && !b.isVerified).length,
+      clearedCount: context.backlogs?.clearedCount ?? backlogsList.filter((b) => b.status === 'cleared').length,
+      allVerified: context.backlogs?.allVerified ?? true,
+      records: backlogsList.map((b) => ({
+        ...b,
+        subject: b.subjectName || b.subjectCode,
+        semesterNumber: b.semester,
+      })),
+    };
+
+    const formattedCompleteness = {
+      ...context.completeness,
+      missing: (context.completeness?.missingFields || []).map((f: string) => ({
+        field: f,
+        label: f.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase()),
+        link: '/profile',
+      })),
+    };
+
+    const formattedCgpa = {
+      ...(context.cgpaInfo as any),
+      cgpa: context.cgpaInfo?.effectiveCgpa ?? context.cgpaInfo?.computedCgpa ?? null,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        ...context,
+        semesters: formattedSemesters,
+        backlogs: formattedBacklogs,
+        cgpa: formattedCgpa,
+        completeness: formattedCompleteness,
+        transfers,
+        correctionRequests,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Challenge 32: Submit profile correction request for restricted fields.
+ * POST /api/students/me/correction-requests
+ */
+export const submitCorrectionRequest = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const studentId = req.user!.id;
+    const { fieldRequested, requestedValue, reason, documentUrl } = req.body;
+
+    const request = await prisma.profileCorrectionRequest.create({
+      data: {
+        studentId,
+        fieldRequested,
+        requestedValue,
+        reason,
+        documentUrl: documentUrl || null,
+        status: 'pending',
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Correction request submitted to placement administration for review.',
+      data: request,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Challenge 32: Get my correction requests history.
+ * GET /api/students/me/correction-requests
+ */
+export const getMyCorrectionRequests = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const studentId = req.user!.id;
+    const requests = await prisma.profileCorrectionRequest.findMany({
+      where: { studentId },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: requests });
+  } catch (err) {
+    next(err);
+  }
+};
+

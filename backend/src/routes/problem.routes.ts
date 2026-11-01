@@ -37,9 +37,9 @@ router.post('/:id/run', requireRole('student'), validate(codeSubmissionSchema), 
 // Submit code against all test cases (student only)
 router.post('/:id/submit', requireRole('student'), validate(codeSubmissionSchema), submitCode);
 
-// Write: trainer only
-router.post('/', requireRole('trainer'), validate(createProblemSchema), createProblem);
-router.put('/:id', requireRole('trainer'), validate(updateProblemSchema), updateProblem);
-router.delete('/:id', requireRole('trainer'), validate(problemIdSchema), deleteProblem);
+// Write: trainer and admin
+router.post('/', requireRole('trainer', 'admin'), validate(createProblemSchema), createProblem);
+router.put('/:id', requireRole('trainer', 'admin'), validate(updateProblemSchema), updateProblem);
+router.delete('/:id', requireRole('trainer', 'admin'), validate(problemIdSchema), deleteProblem);
 
 export default router;

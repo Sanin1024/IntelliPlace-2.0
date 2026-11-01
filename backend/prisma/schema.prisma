@@ -52,6 +52,302 @@ enum AttemptStatus {
   expired
 }
 
+enum AssessmentStatus {
+  pending_scheduling
+  scheduled
+  in_progress
+  completed
+  overdue
+  rescheduled
+  absent
+  evaluation_pending
+}
+
+enum DriveStatus {
+  draft
+  published
+  active
+  closed
+  cancelled
+  withdrawn
+  archived
+}
+
+enum RegistrationCloseReason {
+  deadline
+  company_closed
+  capacity_full
+  cancelled
+  withdrawn
+  closed_manually
+}
+
+enum ApplicationStatus {
+  applied
+  shortlisted
+  selected
+  rejected
+  withdrawn
+}
+
+enum DriveChangeType {
+  schedule_change
+  venue_change
+  meeting_link_change
+  round_change
+  other
+}
+
+enum DriveNotificationType {
+  new_drive
+  deadline_reminder
+  schedule_change
+  cancellation
+  withdrawal
+  registration_closed
+  application_update
+}
+
+enum DriveNotificationStatus {
+  pending
+  sent
+  failed
+  suppressed
+}
+
+enum NotificationCategory {
+  placement_drive
+  application
+  interview
+  deadline
+  eligibility
+  company_update
+  system_announcement
+}
+
+enum NotificationPriority {
+  critical
+  high
+  normal
+  low
+}
+
+enum NotificationDeliveryStatus {
+  pending
+  sent
+  failed
+  read
+  suppressed
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  push
+}
+
+enum ScheduleStatus {
+  pending
+  processing
+  completed
+  cancelled
+}
+
+enum ProfileVerificationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REVISION_REQUIRED
+}
+
+enum DatasetApprovalStatus {
+  NOT_GENERATED
+  GENERATED
+  INCOMPLETE
+  UNDER_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  SHARED
+  REVOKED
+}
+
+enum RoundStatus {
+  pending
+  qualified
+  rejected
+  skipped
+}
+
+enum OfferStatus {
+  issued
+  pending
+  accepted
+  rejected
+  withdrawn
+  expired
+  revoked
+}
+
+enum EmploymentType {
+  internship
+  internship_ppo
+  full_time
+  part_time
+  contract
+  apprenticeship
+}
+
+enum AcademicVerificationStatus {
+  pending
+  verified
+  rejected
+  requires_correction
+}
+
+enum SemesterResultStatus {
+  published
+  pending
+  unavailable
+}
+
+enum BacklogStatus {
+  active
+  cleared
+}
+
+enum TransferStatus {
+  pending
+  approved
+  rejected
+}
+
+enum CorrectionRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum EvaluationStatus {
+  ELIGIBLE
+  INELIGIBLE
+  PENDING_VERIFICATION
+  MANUAL_OVERRIDE
+}
+
+enum ShortlistAction {
+  shortlist
+  select
+  reject
+}
+
+enum TrainingActivityStatus {
+  scheduled
+  completed
+  pending
+  overdue
+  missed
+  cancelled
+  rescheduled
+}
+
+enum ModuleLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum ModuleProgressStatus {
+  not_started
+  in_progress
+  completed
+  failed
+}
+
+enum ContentStatus {
+  updated
+  under_review
+  outdated
+}
+
+enum ResourceVisibility {
+  public
+  institution
+  training_group
+  restricted
+}
+
+enum LinkStatus {
+  ok
+  broken
+  unknown
+}
+
+enum TestStatus {
+  draft
+  published
+  in_progress
+  completed
+  archived
+}
+
+enum TestGeneration {
+  fixed
+  balanced
+}
+
+enum ShowResultsMode {
+  after_submit
+  after_deadline
+  manual
+}
+
+enum AttemptEvaluationStatus {
+  pending
+  evaluated
+  eval_failed
+}
+
+enum ActivityEventType {
+  tab_switch
+  focus_loss
+  window_blur
+  warning_shown
+  session_recovered
+  autosave_failed
+  submission_retry
+}
+
+enum OutputNormalization {
+  exact
+  trim_lines
+  trim_all
+}
+
+enum TrainerRole {
+  primary
+  assistant
+}
+
+enum InterventionSeverity {
+  low
+  medium
+  high
+}
+
+enum InterventionStatus {
+  open
+  monitoring
+  resolved
+}
+
+enum TaskStatus {
+  pending
+  acknowledged
+  completed
+}
+
 // ============================================================
 // USERS & PROFILES
 // ============================================================
@@ -63,56 +359,323 @@ model User {
   name         String
   role         Role     @default(student)
   isActive     Boolean  @default(true) @map("is_active")
+  tokenVersion Int      @default(0) @map("token_version")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
   studentProfile         StudentProfile?
-  uploadedResources      Resource[]           @relation("ResourceUploader")
-  createdMockTests       MockTest[]           @relation("MockTestCreator")
+  uploadedResources      Resource[]              @relation("ResourceUploader")
+  createdMockTests       MockTest[]              @relation("MockTestCreator")
   testAttempts           TestAttempt[]
   codingSubmissions      CodingSubmission[]
+  prepPlanEnrollments    StudentPreparationEnrollment[] @relation("PrepPlanStudent")
   notificationRecipients NotificationRecipient[]
-  createdNotifications   Notification[]      @relation("NotificationCreator")
+  createdNotifications   Notification[]          @relation("NotificationCreator")
   targetCompanies        StudentTargetCompany[]
+  studentResumeData      StudentResumeData?
+  auditLogs              AuditLog[]              @relation("AuditActor")
+  assessmentsAssigned    PreliminaryAssessment[]
+  slotsCreated           AssessmentSlot[]
+  settingsUpdated        SystemSetting[]         @relation("SettingUpdater")
+  driveApplications      DriveApplication[]
+  passwordResetTokens    PasswordResetToken[]
+  eligibilityEvaluations EligibilityEvaluation[]
+  supplementaryExams     SupplementaryExam[]
+  educationHistory       EducationHistory[]
+  shortlistDecisions     ShortlistDecision[]
+  createdSessions        TrainingSession[]       @relation("SessionCreator")
+  trainingAssignments    TrainingAssignment[]    @relation("TrainingAssignee")
+  resourceAccessLogs     ResourceAccessLog[]     @relation("ResourceAccessor")
+  moduleProgress         ModuleProgress[]        @relation("ModuleLearner")
+  videoProgress          VideoProgress[]         @relation("VideoWatcher")
+  competencies           CompetencyRecord[]      @relation("CompetencyHolder")
+  declaredSkills         DeclaredSkill[]
+  skillEvidence          SkillEvidence[]
+  integrityFlags         AssessmentIntegrityFlag[]
+  recommendations        StudentRecommendation[]
+  readinessSnapshots     ReadinessSnapshot[]
+  careerGoal             CareerGoal?
+  attemptActivityLogs    AttemptActivityLog[]
+  resumeVersions         ResumeVersion[]         @relation("ResumeOwner")
+  exams                  AcademicExam[]            @relation("ExamStudent")
+  availability           InterviewerAvailability[] @relation("AvailabilityInterviewer")
+  studentInterviews      MockInterview[]           @relation("InterviewStudent")
+  interviewerSlots       MockInterview[]           @relation("Interviewer")
+  notificationPreferences NotificationPreference?
+  pushSubscriptions       PushSubscription[]
+  offers                  Offer[]                   @relation("OfferStudent")
+  trainerProfile          TrainerProfile?
+  trainerAssignments      TrainerBatchAssignment[]    @relation("TrainerAssignee")
+  sessionAssignments      TrainerSessionAssignment[]  @relation("SessionTrainer")
+  feedbackGiven           TrainerFeedback[]           @relation("FeedbackStudent")
+  feedbackReceived        TrainerFeedback[]           @relation("FeedbackTrainer")
+  tasks                   TrainerTask[]               @relation("TaskTrainer")
+  interventionsAssigned   StudentIntervention[]       @relation("InterventionTrainer")
+  interventionsReceived   StudentIntervention[]       @relation("InterventionStudent")
+  evaluations             TrainerEvaluation[]         @relation("EvalTrainer")
+  consents                ConsentRecord[]             @relation("ConsentStudent")
+  dataRequests            DataRequest[]               @relation("RequestingStudent")
+  accessLogs              DataAccessLog[]             @relation("AccessActor")
+  targetAccessLogs        DataAccessLog[]             @relation("AccessTarget")
+  sharedLogs              DataShareLog[]              @relation("SharedStudent")
+  verifiedProfiles        StudentProfile[]                    @relation("ProfileVerifier")
+  verificationHistories   StudentProfileVerificationHistory[] @relation("OfficerVerificationHistories")
+  requirementTemplates    CompanyDataRequirementTemplate[]    @relation("TemplateCreator")
+  reviewedDatasets        GeneratedPlacementDataset[]         @relation("DatasetReviewer")
+  approvedDatasets        GeneratedPlacementDataset[]         @relation("DatasetApprover")
+  exportedDatasets        DatasetExportHistory[]              @relation("DatasetExporter")
+
+  mechCareerTracks              StudentCareerTrack[]      @relation("MechCareerTrackStudent")
+  mechProjectSubmissions        ProjectSubmission[]     @relation("MechProjectStudent")
+  mechPracticalSubmissions      PracticalSubmission[] @relation("MechPracticalStudent")
+  mechMockInterviewsStudent     MockInterviewSession[] @relation("MechMockInterviewStudent")
+  mechMockInterviewsInterviewer MockInterviewSession[] @relation("MechMockInterviewer")
+  ecePracticalSubmissions       ECEPracticalSubmission[] @relation("ECEPracticalStudent")
+  eeePracticalSubmissions       EEEPracticalSubmission[] @relation("EEEPracticalStudent")
+  itPracticalSubmissions        ITPracticalSubmission[]  @relation("ITPracticalStudent")
 
   @@map("users")
 }
 
 model Branch {
-  id        Int                      @id @default(autoincrement())
-  name      String                   @unique
-  students  StudentProfile[]
-  companies CompanyEligibleBranch[]
+  id               Int                     @id @default(autoincrement())
+  name             String                  @unique
+  code             String?                 @unique @map("code") // e.g., "CS", "CAID", "CSBS"
+  isActive         Boolean                 @default(true) @map("is_active")
+  aliases          String[]                @default([])
+  students         StudentProfile[]
+  companies        CompanyEligibleBranch[]
+  driveEligibility DriveEligibleBranch[]
 
   @@map("branches")
 }
 
 model Batch {
-  id             Int             @id @default(autoincrement())
-  name           String          @unique
-  graduationYear Int             @map("graduation_year")
-  students       StudentProfile[]
-  mockTests      MockTest[]
+  id               Int                  @id @default(autoincrement())
+  name             String               @unique
+  graduationYear   Int                  @map("graduation_year")
+  students         StudentProfile[]
+  mockTests        MockTest[]
+  driveEligibility DriveEligibleBatch[]
+  trainerAssignments TrainerBatchAssignment[]
+  timetable          AcademicTimetable[]
+  resources          Resource[]
 
   @@map("batches")
 }
 
 model StudentProfile {
-  userId          String          @id @map("user_id")
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  branchId        Int?            @map("branch_id")
-  branch          Branch?         @relation(fields: [branchId], references: [id])
-  batchId         Int?             @map("batch_id")
-  batch           Batch?          @relation(fields: [batchId], references: [id])
-  knowledgeLevel  KnowledgeLevel   @default(beginner) @map("knowledge_level")
-  cgpa            Float?
-  placementStatus PlacementStatus  @default(not_placed) @map("placement_status")
-  resumeUrl       String?         @map("resume_url")
-  targetRole      String?         @map("target_role")
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  userId            String                     @id @map("user_id")
+  user              User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityId      String?                    @unique @map("university_id")
+  ktuid             String?                    @unique @map("ktuid") // e.g., KSD23CS007, LKSD23CS134
+  entryType         String                     @default("REGULAR") @map("entry_type") // REGULAR | LATERAL
+  admissionYear     Int?                       @map("admission_year")
+  graduatingBatch   String?                    @map("graduating_batch") // e.g., "2027"
+  academicScheme    String                     @default("APJKTU_2019") @map("academic_scheme")
+  currentSemester   Int?                       @map("current_semester")
+  branchId          Int?                       @map("branch_id")
+  branch            Branch?                    @relation(fields: [branchId], references: [id])
+  batchId           Int?                       @map("batch_id")
+  batch             Batch?                     @relation(fields: [batchId], references: [id])
+  section           String?                    @map("section") // e.g., "CSA", "CSB", "NOT_APPLICABLE"
+  knowledgeLevel    KnowledgeLevel             @default(beginner) @map("knowledge_level")
+  cgpa              Float?
+  cgpaVerified      Boolean                    @default(false) @map("cgpa_verified")
+  academicStatus    AcademicVerificationStatus @default(pending) @map("academic_status")
+  academicUpdatedAt DateTime?                  @map("academic_updated_at")
+  profileUpdatedAt  DateTime?                  @map("profile_updated_at")
+  placementStatus   PlacementStatus            @default(not_placed) @map("placement_status")
+  resumeUrl         String?                    @map("resume_url")
+  targetRole        String?                    @map("target_role")
+  notificationPrefs Json?                      @map("notification_prefs")
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+
+  // Master Profile Fields (Sections A - J)
+  masterStatus        ProfileVerificationStatus  @default(NOT_STARTED) @map("master_status")
+  verificationComments String?                   @map("verification_comments")
+  verifiedBy          String?                    @map("verified_by")
+  verifier            User?                      @relation("ProfileVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+  verifiedAt          DateTime?                  @map("verified_at")
+  submittedAt         DateTime?                  @map("submitted_at")
+  completionPercentage Float                     @default(0.0) @map("completion_percentage")
+
+  // Section A: Personal Information
+  dob                 DateTime?
+  gender              String?
+  personalEmail       String?                    @map("personal_email")
+  collegeEmail        String?                    @map("college_email")
+  phone               String?
+  alternatePhone      String?                    @map("alternate_phone")
+  residentialAddress  String?                    @map("residential_address")
+  permanentAddress    String?                    @map("permanent_address")
+  city                String?
+  district            String?
+  state               String?
+  pincode             String?
+  photoUrl            String?                    @map("photo_url")
+
+  // Section B: Academic Information additions
+  collegeName         String?                    @default("LBS College of Engineering, Kasaragod") @map("college_name")
+  universityAffiliation String?                  @default("APJ Abdul Kalam Technological University") @map("university_affiliation")
+  degree              String?                    @default("B.Tech") @map("degree")
+  overallPercentage   Float?                     @map("overall_percentage")
+
+  // Section C: Previous Educational Qualifications
+  tenthSchool         String?                    @map("tenth_school")
+  tenthBoard          String?                    @map("tenth_board")
+  tenthYear           Int?                       @map("tenth_year")
+  tenthPercentage     Float?                     @map("tenth_percentage")
+  twelfthSchool       String?                    @map("twelfth_school")
+  twelfthBoard        String?                    @map("twelfth_board")
+  twelfthStream       String?                    @map("twelfth_stream")
+  twelfthYear         Int?                       @map("twelfth_year")
+  twelfthPercentage   Float?                     @map("twelfth_percentage")
+  hasDiploma          Boolean                    @default(false) @map("has_diploma")
+  diplomaInstitution  String?                    @map("diploma_institution")
+  diplomaBranch       String?                    @map("diploma_branch")
+  diplomaYear         Int?                       @map("diploma_year")
+  diplomaPercentage   Float?                     @map("diploma_percentage")
+
+  // Section D: Academic Backlog & Gap Information
+  activeBacklogs      Int                        @default(0) @map("active_backlogs")
+  historicalBacklogs  Int                        @default(0) @map("historical_backlogs")
+  clearedBacklogs     Int                        @default(0) @map("cleared_backlogs")
+  hasAcademicGaps     Boolean                    @default(false) @map("has_academic_gaps")
+  gapDurationMonths   Int?                       @map("gap_duration_months")
+  gapReason           String?                    @map("gap_reason")
+
+  // Section G Flag
+  internshipNotApplicable Boolean                @default(false) @map("internship_not_applicable")
+
+  // Section I: Professional Information
+  careerInterests     String[]                   @default([]) @map("career_interests")
+  preferredRoles      String[]                   @default([]) @map("preferred_roles")
+  preferredDomains    String[]                   @default([]) @map("preferred_domains")
+  preferredLocations  String[]                   @default([]) @map("preferred_locations")
+  willingToRelocate   Boolean                    @default(true) @map("willing_to_relocate")
+  githubUrl           String?                    @map("github_url")
+  linkedinUrl         String?                    @map("linkedin_url")
+  portfolioUrl        String?                    @map("portfolio_url")
+
+  // Master Profile Relations
+  technicalSkills     StudentTechnicalSkill[]
+  projects            StudentProject[]
+  internships         StudentInternship[]
+  certifications      StudentCertification[]
+  documents           StudentDocument[]
+  masterVerificationHistory StudentProfileVerificationHistory[]
+
+  semesters           SemesterResult[]
+  backlogs            BacklogRecord[]
+  transfers           StudentTransfer[]
+  correctionRequests  ProfileCorrectionRequest[]
+  verificationHistory AcademicVerificationHistory[]
 
   @@map("student_profiles")
+}
+
+model StudentTechnicalSkill {
+  id          String         @id @default(uuid())
+  studentId   String         @map("student_id")
+  student     StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  category    String         // programming_language, framework, library, database, tool, os, cloud, ai_ml
+  name        String
+  proficiency String         @default("intermediate") // beginner, intermediate, advanced, expert
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("student_technical_skills")
+}
+
+model StudentProject {
+  id           String         @id @default(uuid())
+  studentId    String         @map("student_id")
+  student      StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  title        String
+  description  String
+  domain       String?
+  technologies String[]       @default([])
+  duration     String?
+  isTeam       Boolean        @default(false) @map("is_team")
+  contribution String?
+  projectUrl   String?        @map("project_url")
+  githubUrl    String?        @map("github_url")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("student_projects")
+}
+
+model StudentInternship {
+  id             String         @id @default(uuid())
+  studentId      String         @map("student_id")
+  student        StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  organization   String
+  role           String
+  type           String         @default("internship") // internship | part_time | full_time
+  startDate      DateTime       @map("start_date")
+  endDate        DateTime?      @map("end_date")
+  durationMonths Int?           @map("duration_months")
+  responsibilities String?
+  technologies   String[]       @default([])
+  certificateUrl String?        @map("certificate_url")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("student_internships")
+}
+
+model StudentCertification {
+  id             String         @id @default(uuid())
+  studentId      String         @map("student_id")
+  student        StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  title          String
+  issuer         String
+  issueDate      DateTime       @map("issue_date")
+  expiryDate     DateTime?      @map("expiry_date")
+  credentialId   String?        @map("credential_id")
+  verificationUrl String?       @map("verification_url")
+  certificateUrl String?        @map("certificate_url")
+  category       String         @default("certification") // certification | achievement | competition | workshop
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("student_certifications")
+}
+
+model StudentDocument {
+  id          String         @id @default(uuid())
+  studentId   String         @map("student_id")
+  student     StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  type        String         // resume, tenth_marksheet, twelfth_marksheet, diploma_marksheet, semester_marksheet, consolidated_marksheet, certificate, other
+  title       String
+  fileUrl     String         @map("file_url")
+  fileSize    Int?           @map("file_size")
+  mimeType    String?        @map("mime_type")
+  verified    Boolean        @default(false)
+  verifiedBy  String?        @map("verified_by")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@index([studentId, type])
+  @@map("student_documents")
+}
+
+model StudentProfileVerificationHistory {
+  id          String                    @id @default(uuid())
+  studentId   String                    @map("student_id")
+  student     StudentProfile            @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  status      ProfileVerificationStatus
+  officerId   String                    @map("officer_id")
+  officer     User                      @relation("OfficerVerificationHistories", fields: [officerId], references: [id])
+  comments    String?
+  sections    Json?                     // Section-wise verification state: { personal: true, academic: true, etc. }
+  createdAt   DateTime                  @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("student_profile_verification_history")
 }
 
 // ============================================================
@@ -127,45 +690,65 @@ model Topic {
   codingProblems    CodingProblem[]
   resources         Resource[]
   companyTopics     CompanyTopic[]
+  trainingSessions  TrainingSession[]
+  learningModules   LearningModule[]
 
   @@map("topics")
 }
 
 model AptitudeQuestion {
-  id             String              @id @default(uuid())
-  topicId        Int                 @map("topic_id")
-  topic          Topic               @relation(fields: [topicId], references: [id])
-  difficulty     Difficulty          @default(easy)
-  questionText   String              @map("question_text")
-  optionA        String              @map("option_a")
-  optionB        String              @map("option_b")
-  optionC        String              @map("option_c")
-  optionD        String              @map("option_d")
+  id             String             @id @default(uuid())
+  topicId        Int                @map("topic_id")
+  topic          Topic              @relation(fields: [topicId], references: [id])
+  difficulty     Difficulty         @default(easy)
+  questionText   String             @map("question_text")
+  optionA        String             @map("option_a")
+  optionB        String             @map("option_b")
+  optionC        String             @map("option_c")
+  optionD        String             @map("option_d")
   correctOption  String
+  isMultiSelect  Boolean            @default(false) @map("is_multi_select")
+  correctOptions String[]           @default([]) @map("correct_options")
   explanation    String?
-  createdAt      DateTime            @default(now()) @map("created_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
   mockTests      MockTestQuestion[]
   studentAnswers StudentAnswer[]
+  versions       QuestionVersion[]
 
   @@index([topicId])
   @@map("aptitude_questions")
 }
 
 model CodingProblem {
-  id            String             @id @default(uuid())
-  topicId       Int                @map("topic_id")
-  topic         Topic              @relation(fields: [topicId], references: [id])
-  difficulty    Difficulty         @default(easy)
-  title         String
-  description   String
-  sampleInput   String             @map("sample_input")
-  sampleOutput  String             @map("sample_output")
-  tags          String[]
-  createdAt     DateTime           @default(now()) @map("created_at")
-  testCases     CodingTestCase[]
-  submissions   CodingSubmission[]
+  id                  String                      @id @default(uuid())
+  topicId             Int                         @map("topic_id")
+  topic               Topic                       @relation(fields: [topicId], references: [id])
+  difficulty          Difficulty                  @default(easy)
+  title               String
+  slug                String                      @unique
+  description         String
+  inputFormat         String?                     @map("input_format")
+  outputFormat        String?                     @map("output_format")
+  constraints         String?
+  sampleInput         String                      @map("sample_input")
+  sampleOutput        String                      @map("sample_output")
+  tags                String[]
+  companyTags         String[]                    @default([]) @map("company_tags")
+  timeLimit           Int                         @default(2000) @map("time_limit")
+  memoryLimit         Int                         @default(256) @map("memory_limit")
+  editorial           String?
+  sourceUrl           String?                     @map("source_url")
+  license             String?
+  status              String                      @default("published") // draft, under_review, published, archived
+  timeLimitMs         Int                         @default(5000) @map("time_limit_ms")
+  outputNormalization OutputNormalization        @default(trim_lines) @map("output_normalization")
+  partialMarks        Boolean                     @default(false) @map("partial_marks")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  testCases           CodingTestCase[]
+  submissions         CodingSubmission[]
+  tasks               InterviewPreparationTask[]
 
-  @@index([topicId])
+  @@index([topicId, difficulty, status])
   @@map("coding_problems")
 }
 
@@ -182,22 +765,79 @@ model CodingTestCase {
 }
 
 // ============================================================
+// GLOBAL INTERVIEW PREPARATION
+// ============================================================
+
+model InterviewPreparationPlan {
+  id          String   @id @default(uuid())
+  title       String   @unique
+  durationDays Int      @map("duration_days")
+  targetRole  String   @map("target_role")
+  difficulty  String   @default("medium")
+  description String?
+  status      String   @default("published")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tasks       InterviewPreparationTask[]
+  enrollments StudentPreparationEnrollment[]
+
+  @@map("interview_preparation_plans")
+}
+
+model InterviewPreparationTask {
+  id          String   @id @default(uuid())
+  planId      String   @map("plan_id")
+  plan        InterviewPreparationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayNumber   Int      @map("day_number")
+  problemId   String?  @map("problem_id")
+  problem     CodingProblem? @relation(fields: [problemId], references: [id])
+  taskType    String   @default("coding") @map("task_type") // coding, reading, mock_interview
+  title       String
+  description String?
+  isRequired  Boolean  @default(true) @map("is_required")
+
+  @@map("interview_preparation_tasks")
+}
+
+model StudentPreparationEnrollment {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  student     User     @relation("PrepPlanStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  planId      String   @map("plan_id")
+  plan        InterviewPreparationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  enrolledAt  DateTime @default(now()) @map("enrolled_at")
+  progress    Float    @default(0)
+
+  @@unique([studentId, planId])
+  @@map("student_preparation_enrollments")
+}
+
+// ============================================================
 // COMPANIES
 // ============================================================
 
 model Company {
-  id               String                   @id @default(uuid())
-  name             String                   @unique
+  id               String                  @id @default(uuid())
+  name             String                  @unique
+  website          String?
+  hqLocation       String?                 @map("hq_location")
+  contactEmail     String?                 @map("contact_email")
+  contactPhone     String?                 @map("contact_phone")
   description      String?
-  jobRole          String?                  @map("job_role")
+  jobRole          String?                 @map("job_role")
   package          Float?
-  eligibilityCgpa  Float?                   @map("eligibility_cgpa")
-  driveDate        DateTime?                @map("drive_date")
-  syllabusText     String?                  @map("syllabus_text")
-  createdAt        DateTime                 @default(now()) @map("created_at")
+  eligibilityCgpa  Float?                  @map("eligibility_cgpa")
+  driveDate        DateTime?               @map("drive_date")
+  syllabusText     String?                 @map("syllabus_text")
+  internalNotes    String?                 @map("internal_notes")
+  deletedAt        DateTime?               @map("deleted_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
   eligibleBranches CompanyEligibleBranch[]
   topics           CompanyTopic[]
   targetStudents   StudentTargetCompany[]
+  drives           PlacementDrive[]
+  offers           Offer[]                 @relation("OfferCompany")
+  sharedLogs       DataShareLog[]          @relation("SharedCompany")
 
   @@map("companies")
 }
@@ -248,6 +888,28 @@ model Resource {
   uploader    User     @relation("ResourceUploader", fields: [uploadedBy], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
 
+  version           Int                @default(1)
+  previousVersionId String?            @map("previous_version_id")
+  contentStatus     ContentStatus      @default(updated) @map("content_status")
+  lastReviewedAt    DateTime?          @map("last_reviewed_at")
+  difficulty        ModuleLevel?
+  requiredSkills    String[]           @default([]) @map("required_skills")
+  visibility        ResourceVisibility @default(institution)
+  sourceUrl         String?            @map("source_url")
+  contentHash       String?            @map("content_hash")
+  license           String?
+  attribution       String?
+  alternatives      String[]           @default([])
+  batchId           Int?               @map("batch_id")
+  batch             Batch?             @relation(fields: [batchId], references: [id])
+
+  versions      ResourceVersion[]
+  linkChecks    ResourceLinkCheck[]
+  accessLogs    ResourceAccessLog[]
+  videoProgress VideoProgress[]
+  module        LearningModule?    @relation("ModuleResource")
+  recommendations StudentRecommendation[]
+
   @@index([topicId])
   @@map("resources")
 }
@@ -257,21 +919,30 @@ model Resource {
 // ============================================================
 
 model MockTest {
-  id             String             @id @default(uuid())
-  title          String
-  description    String?
-  durationMins   Int                @default(30) @map("duration_mins")
-  batchId        Int?               @map("batch_id")
-  batch          Batch?             @relation(fields: [batchId], references: [id])
-  availableFrom  DateTime?          @map("available_from")
-  availableUntil DateTime?          @map("available_until")
-  maxAttempts    Int                @default(1) @map("max_attempts")
-  createdBy      String             @map("created_by")
-  creator        User               @relation("MockTestCreator", fields: [createdBy], references: [id])
-  createdAt      DateTime           @default(now()) @map("created_at")
-  isActive       Boolean            @default(true) @map("is_active")
-  questions      MockTestQuestion[]
-  attempts       TestAttempt[]
+  id                 String             @id @default(uuid())
+  title              String
+  description        String?
+  durationMins       Int                @default(30) @map("duration_mins")
+  batchId            Int?               @map("batch_id")
+  batch              Batch?             @relation(fields: [batchId], references: [id])
+  availableFrom      DateTime?          @map("available_from")
+  availableUntil     DateTime?          @map("available_until")
+  maxAttempts        Int                @default(1) @map("max_attempts")
+  createdBy          String             @map("created_by")
+  creator            User               @relation("MockTestCreator", fields: [createdBy], references: [id])
+  createdAt          DateTime           @default(now()) @map("created_at")
+  isActive           Boolean            @default(true) @map("is_active")
+  status             TestStatus         @default(draft)
+  shuffleQuestions   Boolean            @default(false) @map("shuffle_questions")
+  shuffleOptions     Boolean            @default(false) @map("shuffle_options")
+  negativeMarks      Float              @default(0) @map("negative_marks")
+  generationMode     TestGeneration     @default(fixed) @map("generation_mode")
+  questionRules      Json?              @map("question_rules")
+  showResults        ShowResultsMode    @default(after_submit) @map("show_results")
+  securityConfig     Json?              @map("security_config")
+  resultsPublishedAt DateTime?          @map("results_published_at")
+  questions          MockTestQuestion[]
+  attempts           TestAttempt[]
 
   @@index([batchId])
   @@map("mock_tests")
@@ -289,31 +960,48 @@ model MockTestQuestion {
 }
 
 model TestAttempt {
-  id          String          @id @default(uuid())
-  testId      String?         @map("test_id")
-  test        MockTest?       @relation(fields: [testId], references: [id])
-  studentId   String          @map("student_id")
-  student     User            @relation(fields: [studentId], references: [id])
-  attemptType AttemptType     @default(mock) @map("attempt_type")
-  status      AttemptStatus   @default(in_progress)
-  startTime   DateTime        @default(now()) @map("start_time")
-  endTime     DateTime?       @map("end_time")
-  score       Int?
-  totalMarks  Int?            @map("total_marks")
-  answers     StudentAnswer[]
+  id                       String                    @id @default(uuid())
+  testId                   String?                   @map("test_id")
+  test                     MockTest?                 @relation(fields: [testId], references: [id])
+  studentId                String                    @map("student_id")
+  student                  User                      @relation(fields: [studentId], references: [id])
+  attemptType              AttemptType               @default(mock) @map("attempt_type")
+  status                   AttemptStatus             @default(in_progress)
+  startTime                DateTime                  @default(now()) @map("start_time")
+  endTime                  DateTime?                 @map("end_time")
+  score                    Float?
+  totalMarks               Float?                    @map("total_marks")
+  submissionIdempotencyKey String?                   @unique @map("submission_idempotency_key")
+  lastQuestionIndex        Int?                      @map("last_question_index")
+  questionOrder            Json?                     @map("question_order")
+  optionOrders             Json?                     @map("option_orders")
+  extraTimeMins            Int                       @default(0) @map("extra_time_mins")
+  evaluationStatus         AttemptEvaluationStatus   @default(pending) @map("evaluation_status")
+  clientSubmittedAt        DateTime?                 @map("client_submitted_at")
+  processedAt              DateTime?                 @map("processed_at")
+  answers                  StudentAnswer[]
+  preliminaryAssessment    PreliminaryAssessment?
+  integrityFlags           AssessmentIntegrityFlag[]
+  skillEvidence            SkillEvidence[]
+  activities               AttemptActivityLog[]
 
   @@index([studentId])
   @@index([testId])
+  @@index([studentId, status])
+  @@index([testId, status])
   @@map("test_attempts")
 }
 
 model StudentAnswer {
-  attemptId      String           @map("attempt_id")
-  attempt        TestAttempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  questionId     String           @map("question_id")
-  question       AptitudeQuestion @relation(fields: [questionId], references: [id])
-  selectedOption String?          @map("selected_option")
-  isCorrect      Boolean?         @map("is_correct")
+  attemptId       String           @map("attempt_id")
+  attempt         TestAttempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId      String           @map("question_id")
+  question        AptitudeQuestion @relation(fields: [questionId], references: [id])
+  selectedOption  String?          @map("selected_option")
+  selectedOptions String[]         @default([]) @map("selected_options")
+  isCorrect       Boolean?         @map("is_correct")
+  marksAwarded    Float?           @map("marks_awarded")
+  savedAt         DateTime         @default(now()) @map("saved_at")
 
   @@id([attemptId, questionId])
   @@map("student_answers")
@@ -346,26 +1034,2236 @@ model CodingSubmission {
 // ============================================================
 
 model Notification {
-  id          String                   @id @default(uuid())
-  title       String
-  message     String
-  createdBy   String                   @map("created_by")
-  creator     User                     @relation("NotificationCreator", fields: [createdBy], references: [id])
-  createdAt   DateTime                 @default(now()) @map("created_at")
-  recipients  NotificationRecipient[]
+  id             String               @id @default(uuid())
+  title          String
+  message        String
+  category       NotificationCategory @default(system_announcement)
+  priority       NotificationPriority @default(normal)
+  entityType     String?              @map("entity_type")
+  entityId       String?              @map("entity_id")
+  idempotencyKey String?              @unique @map("idempotency_key")
+  scheduledAt    DateTime?            @map("scheduled_at")
+  createdBy      String?              @map("created_by")
+  creator        User?                @relation("NotificationCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  scheduleId     String?              @map("schedule_id")
+  schedule       NotificationSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  createdAt      DateTime             @default(now()) @map("created_at")
+  recipients     NotificationRecipient[]
 
+  @@index([category])
+  @@index([priority])
   @@map("notifications")
 }
 
 model NotificationRecipient {
-  notificationId String       @map("notification_id")
-  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-  userId         String       @map("user_id")
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isRead         Boolean      @default(false) @map("is_read")
-  readAt         DateTime?    @map("read_at")
+  id             String                     @id @default(uuid())
+  notificationId String                     @map("notification_id")
+  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String                     @map("user_id")
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryStatus NotificationDeliveryStatus @default(pending) @map("delivery_status")
+  channel        NotificationChannel        @default(in_app) @map("channel")
+  retryCount     Int                        @default(0) @map("retry_count")
+  lastError      String?                    @map("last_error")
+  isRead         Boolean                    @default(false) @map("is_read")
+  sentAt         DateTime?                  @map("sent_at")
+  readAt         DateTime?                  @map("read_at")
+  createdAt      DateTime                   @default(now()) @map("created_at")
 
-  @@id([notificationId, userId])
+  @@unique([notificationId, userId, channel])
   @@index([userId])
+  @@index([userId, isRead])
+  @@index([deliveryStatus, channel])
   @@map("notification_recipients")
 }
+
+model NotificationPreference {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prefs     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  keys      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// ============================================================
+// RESUME BUILDER
+// ============================================================
+
+model StudentResumeData {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  summary   String?
+  education Json?
+  skills    String[]
+  projects  Json?
+  links     Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("student_resume_data")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String   @map("actor_id")
+  actor      User     @relation("AuditActor", fields: [actorId], references: [id])
+  action     String
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id")
+  outcome    String   @default("success")
+  requestId  String?  @map("request_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType])
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// SYSTEM SETTINGS & PRELIMINARY ASSESSMENTS
+// ============================================================
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedBy String   @map("updated_by")
+  updater   User     @relation("SettingUpdater", fields: [updatedBy], references: [id])
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model AssessmentSlot {
+  id           String                  @id @default(uuid())
+  startTime    DateTime                @map("start_time")
+  endTime      DateTime                @map("end_time")
+  location     String?
+  instructions String?
+  capacity     Int                     @default(50)
+  createdBy    String                  @map("created_by")
+  creator      User                    @relation(fields: [createdBy], references: [id])
+  assessments  PreliminaryAssessment[]
+  createdAt    DateTime                @default(now()) @map("created_at")
+
+  @@map("assessment_slots")
+}
+
+model PreliminaryAssessment {
+  id             String           @id @default(uuid())
+  studentId      String           @unique @map("student_id")
+  student        User             @relation(fields: [studentId], references: [id])
+  slotId         String?          @map("slot_id")
+  slot           AssessmentSlot?  @relation(fields: [slotId], references: [id])
+  status         AssessmentStatus @default(pending_scheduling)
+  deadline       DateTime
+  testAttemptId  String?          @unique @map("test_attempt_id")
+  testAttempt    TestAttempt?     @relation(fields: [testAttemptId], references: [id])
+  score          Int?
+  assignedLevel  KnowledgeLevel?
+  completedAt    DateTime?        @map("completed_at")
+  overrideReason String?          @map("override_reason")
+  overriddenBy   String?          @map("overridden_by")
+  overriddenAt   DateTime?        @map("overridden_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@map("preliminary_assessments")
+}
+
+// ============================================================
+// PLACEMENT DRIVES & APPLICATIONS
+// ============================================================
+
+model PlacementDrive {
+  id                      String                   @id @default(uuid())
+  companyId               String                   @map("company_id")
+  company                 Company                  @relation(fields: [companyId], references: [id])
+  title                   String
+  jobRole                 String                   @map("job_role")
+  jobDescription          String?                  @map("job_description")
+  responsibilities        String?
+  requiredSkills          String[]                 @map("required_skills")
+  qualifications          String?
+  experienceRequired      String?                  @map("experience_required")
+  employmentType          String                   @default("full_time") @map("employment_type")
+  location                String?
+  vacancies               Int?
+  ctcMin                  Float?                   @map("ctc_min")
+  ctcMax                  Float?                   @map("ctc_max")
+  monthlySalary           Float?                   @map("monthly_salary")
+  stipend                 Float?
+  benefits                String?
+  selectionProcess        String?                  @map("selection_process")
+  minCgpa                 Float?                   @map("min_cgpa")
+  maxBacklogs             Int?                     @map("max_backlogs")
+  registrationDeadline    DateTime?                @map("registration_deadline")
+  registrationClosedAt    DateTime?                @map("registration_closed_at")
+  registrationCloseReason RegistrationCloseReason? @map("registration_close_reason")
+  status                  DriveStatus              @default(draft)
+  rounds                  Json?
+  duplicateOverrideReason String?                  @map("duplicate_override_reason")
+  conflictOverrideReason  String?                  @map("conflict_override_reason")
+  cancelledAt             DateTime?                @map("cancelled_at")
+  cancelledBy             String?                  @map("cancelled_by")
+  cancellationReason      String?                  @map("cancellation_reason")
+  withdrawnAt             DateTime?                @map("withdrawn_at")
+  withdrawnBy             String?                  @map("withdrawn_by")
+  withdrawalReason        String?                  @map("withdrawal_reason")
+  archivedAt              DateTime?                @map("archived_at")
+  createdBy               String                   @map("created_by")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  deletedAt               DateTime?                @map("deleted_at")
+
+  eligibleBranches DriveEligibleBranch[]
+  eligibleBatches  DriveEligibleBatch[]
+  applications     DriveApplication[]
+  changeHistory    DriveChangeHistory[]
+  notifications    DriveNotification[]
+  criteriaVersions DriveEligibilityCriteria[]
+  evaluations      EligibilityEvaluation[]
+  shortlists       ShortlistDecision[]
+  recruitmentRounds RecruitmentRound[]
+  offers           Offer[]
+  campaign         NotificationCampaign?
+  dataRequirement   PlacementDriveDataRequirement?
+  generatedDatasets GeneratedPlacementDataset[]
+
+  @@index([status])
+  @@index([companyId])
+  @@index([registrationDeadline])
+  @@map("placement_drives")
+}
+
+model CompanyDataRequirementTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  companyName String?  @map("company_name")
+  description String?
+  fields      Json     // Array of RequestedFieldDefinition: [{ fieldKey, label, required, order }]
+  createdBy   String   @map("created_by")
+  creator     User     @relation("TemplateCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("company_data_requirement_templates")
+}
+
+model PlacementDriveDataRequirement {
+  id          String                 @id @default(uuid())
+  driveId     String                 @unique @map("drive_id")
+  drive       PlacementDrive         @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  fields      Json                   // Array of RequestedFieldDefinition
+  instructions String?
+  templateId  String?                @map("template_id")
+  datasets    GeneratedPlacementDataset[]
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+
+  @@map("placement_drive_data_requirements")
+}
+
+model GeneratedPlacementDataset {
+  id            String                 @id @default(uuid())
+  requirementId String                 @map("requirement_id")
+  requirement   PlacementDriveDataRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  driveId       String                 @map("drive_id")
+  drive         PlacementDrive         @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  version       Int                    @default(1)
+  status        DatasetApprovalStatus  @default(GENERATED)
+  scope         String                 @default("applied_students") // applied_students | all_eligible
+  totalStudents Int                    @default(0) @map("total_students")
+  completeCount Int                    @default(0) @map("complete_count")
+  missingCount  Int                    @default(0) @map("missing_count")
+  data          Json                   // Generated records: [{ studentId, fields: { [col]: val }, missingFields: [], isComplete: true }]
+  reviewComments String?               @map("review_comments")
+  reviewedBy    String?                @map("reviewed_by")
+  reviewer      User?                  @relation("DatasetReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?              @map("reviewed_at")
+  approvedBy    String?                @map("approved_by")
+  approver      User?                  @relation("DatasetApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+  approvedAt    DateTime?              @map("approved_at")
+  sharedAt      DateTime?              @map("shared_at")
+  exportHistory DatasetExportHistory[]
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  @@index([driveId, version])
+  @@index([status])
+  @@map("generated_placement_datasets")
+}
+
+model DatasetExportHistory {
+  id          String                    @id @default(uuid())
+  datasetId   String                    @map("dataset_id")
+  dataset     GeneratedPlacementDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  format      String                    // xlsx, csv, pdf
+  exportedBy  String                    @map("exported_by")
+  exporter    User                      @relation("DatasetExporter", fields: [exportedBy], references: [id])
+  sharedWith  String?                   @map("shared_with") // recipient/destination
+  exportedAt  DateTime                  @default(now()) @map("exported_at")
+
+  @@map("dataset_export_history")
+}
+
+model NotificationCampaign {
+  id        String                 @id @default(uuid())
+  driveId   String                 @unique @map("drive_id")
+  drive     PlacementDrive         @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  schedules NotificationSchedule[]
+
+  @@map("notification_campaigns")
+}
+
+model NotificationSchedule {
+  id           String               @id @default(uuid())
+  campaignId   String               @map("campaign_id")
+  campaign     NotificationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  reminderType String               @map("reminder_type") // initial, 7d, 3d, 24h, 6h, 1h, manual
+  scheduledAt  DateTime             @map("scheduled_at")
+  status       ScheduleStatus       @default(pending)
+  processedAt  DateTime?            @map("processed_at")
+  lockedAt     DateTime?            @map("locked_at") // For worker locking
+
+  notifications Notification[]
+
+  @@index([status, scheduledAt])
+  @@map("notification_schedules")
+}
+
+model DriveEligibleBranch {
+  driveId  String         @map("drive_id")
+  drive    PlacementDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  branchId Int            @map("branch_id")
+  branch   Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([driveId, branchId])
+  @@map("drive_eligible_branches")
+}
+
+model DriveEligibleBatch {
+  driveId String         @map("drive_id")
+  drive   PlacementDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  batchId Int            @map("batch_id")
+  batch   Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@id([driveId, batchId])
+  @@map("drive_eligible_batches")
+}
+
+model DriveApplication {
+  id                        String            @id @default(uuid())
+  driveId                   String            @map("drive_id")
+  drive                     PlacementDrive    @relation(fields: [driveId], references: [id], onDelete: Restrict)
+  studentId                 String            @map("student_id")
+  student                   User              @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  status                    ApplicationStatus @default(applied)
+  eligibilityOverrideReason String?           @map("eligibility_override_reason")
+  overriddenBy              String?           @map("overridden_by")
+  appliedAt                 DateTime          @default(now()) @map("applied_at")
+  withdrawnAt               DateTime?         @map("withdrawn_at")
+  withdrawalReason          String?           @map("withdrawal_reason")
+  resumeVersionId           String?           @map("resume_version_id")
+  resumeVersion             ResumeVersion?    @relation(fields: [resumeVersionId], references: [id])
+  resumeLabelAtSubmit       String?           @map("resume_label_at_submit")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  activities                ApplicationActivityLog[]
+  rounds                    ApplicationRoundProgress[]
+  mockInterviews            MockInterview[]
+  offers                    Offer[]
+
+  @@unique([driveId, studentId]) // DB-level duplicate prevention (Challenge 8/18)
+  @@index([driveId])
+  @@index([studentId])
+  @@index([driveId, status])
+  @@index([studentId, status])
+  @@map("drive_applications")
+}
+
+model DriveChangeHistory {
+  id            String          @id @default(uuid())
+  driveId       String          @map("drive_id")
+  drive         PlacementDrive  @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  changedBy     String          @map("changed_by")
+  changeType    DriveChangeType @map("change_type")
+  previousValue Json?           @map("previous_value")
+  newValue      Json?           @map("new_value")
+  changedAt     DateTime        @default(now()) @map("changed_at")
+
+  @@index([driveId])
+  @@map("drive_change_history")
+}
+
+model RecruitmentRound {
+  id        String   @id @default(uuid())
+  driveId   String   @map("drive_id")
+  drive     PlacementDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  name      String   // e.g., "Online Assessment", "Technical Interview"
+  order     Int      // 1, 2, 3...
+  createdAt DateTime @default(now()) @map("created_at")
+
+  progress  ApplicationRoundProgress[]
+
+  @@unique([driveId, name])
+  @@index([driveId, order])
+  @@map("recruitment_rounds")
+}
+
+model ApplicationRoundProgress {
+  id            String           @id @default(uuid())
+  applicationId String           @map("application_id")
+  application   DriveApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  roundId       String           @map("round_id")
+  round         RecruitmentRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  status        RoundStatus      @default(pending)
+  scheduledAt   DateTime?        @map("scheduled_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@unique([applicationId, roundId])
+  @@index([applicationId])
+  @@index([roundId])
+  @@index([applicationId, status]) // Challenge 294: Composite index for fast application round progress lookup
+  @@map("application_round_progress")
+}
+
+model ApplicationActivityLog {
+  id             String           @id @default(uuid())
+  applicationId  String           @map("application_id")
+  application    DriveApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  action         String           // submitted, shortlisted, round_qualified, selected, withdrawn
+  previousStatus String?          @map("previous_status")
+  newStatus      String?          @map("new_status")
+  actorId        String           @map("actor_id")
+  details        Json?
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@index([applicationId])
+  @@map("application_activity_logs")
+}
+
+model Offer {
+  id                 String            @id @default(uuid())
+  studentId          String            @map("student_id")
+  student            User              @relation("OfferStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  companyId          String            @map("company_id")
+  company            Company           @relation("OfferCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  driveId            String?           @map("drive_id")
+  drive              PlacementDrive?   @relation(fields: [driveId], references: [id], onDelete: Restrict)
+  applicationId      String?           @map("application_id")
+  application        DriveApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  jobRole            String            @map("job_role")
+  employmentType     EmploymentType    @map("employment_type")
+  offerDate          DateTime          @map("offer_date")
+  joiningDate        DateTime?         @map("joining_date")
+  acceptanceDeadline DateTime?         @map("acceptance_deadline")
+  ctc                Float?
+  fixedSalary        Float?            @map("fixed_salary")
+  variablePay        Float?            @map("variable_pay")
+  monthlySalary      Float?            @map("monthly_salary")
+  stipend            Float?
+  currency           String            @default("INR")
+  offerLetterUrl     String?           @map("offer_letter_url")
+  offerRefNumber     String?           @map("offer_ref_number")
+  source             String            @default("on_campus") @map("source") // on_campus, off_campus
+  status             OfferStatus       @default(issued)
+  isVerified         Boolean           @default(false) @map("is_verified")
+  rejectionReason    String?           @map("rejection_reason")
+  withdrawalReason   String?           @map("withdrawal_reason")
+  createdBy          String            @map("created_by")
+  updatedBy          String?           @map("updated_by")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  history            OfferHistory[]
+
+  @@unique([studentId, companyId, jobRole, driveId])
+  @@index([studentId])
+  @@index([companyId])
+  @@index([status])
+  @@index([studentId, status]) // Challenge 294: Composite index for student offers by status
+  @@index([companyId, status]) // Challenge 294: Composite index for company offers by status
+  @@map("offers")
+}
+
+model OfferHistory {
+  id             String   @id @default(uuid())
+  offerId        String   @map("offer_id")
+  offer          Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  action         String
+  previousStatus String?  @map("previous_status")
+  newStatus      String?  @map("new_status")
+  actorId        String   @map("actor_id")
+  details        Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([offerId])
+  @@map("offer_history")
+}
+
+model DriveNotification {
+  id             String                  @id @default(uuid())
+  driveId        String                  @map("drive_id")
+  drive          PlacementDrive          @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  type           DriveNotificationType
+  status         DriveNotificationStatus @default(pending)
+  dedupKey       String                  @unique @map("dedup_key")
+  attempts       Int                     @default(0)
+  lastError      String?                 @map("last_error")
+  recipientCount Int                     @default(0) @map("recipient_count")
+  sentAt         DateTime?               @map("sent_at")
+  createdAt      DateTime                @default(now()) @map("created_at")
+
+  @@index([driveId])
+  @@index([status])
+  @@map("drive_notifications")
+}
+
+// ============================================================
+// STUDENT MANAGEMENT & ACADEMIC INTEGRITY (Challenges 21–35)
+// ============================================================
+
+model SemesterResult {
+  id               String               @id @default(uuid())
+  studentId        String               @map("student_id")
+  student          StudentProfile       @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  semesterNumber   Int                  @map("semester_number")
+  gpa              Float?
+  sgpa             Float?
+  creditsEarned    Int?                 @map("credits_earned")
+  credits          Float?
+  creditsAttempted Int?                 @map("credits_attempted")
+  status           SemesterResultStatus @default(pending)
+  verifiedAt       DateTime?            @map("verified_at")
+  verifiedBy       String?              @map("verified_by")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  @@unique([studentId, semesterNumber])
+  @@index([studentId])
+  @@map("semester_results")
+}
+
+model BacklogRecord {
+  id                String         @id @default(uuid())
+  studentId         String         @map("student_id")
+  student           StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  subjectCode       String?        @map("subject_code")
+  subject           String?
+  subjectName       String?        @map("subject_name")
+  semester          Int?
+  semesterNumber    Int?           @map("semester_number")
+  status            BacklogStatus  @default(active)
+  clearedAt         DateTime?      @map("cleared_at")
+  clearedInSemester Int?           @map("cleared_in_semester")
+  isVerified        Boolean        @default(false) @map("is_verified")
+  verifiedBy        String?        @map("verified_by")
+  verifiedAt        DateTime?      @map("verified_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  @@index([studentId, status])
+  @@map("backlog_records")
+}
+
+model AcademicVerificationHistory {
+  id          String                     @id @default(uuid())
+  studentId   String                     @map("student_id")
+  student     StudentProfile             @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  action      String
+  status      AcademicVerificationStatus
+  reason      String?
+  performedBy String                     @map("performed_by")
+  createdAt   DateTime                   @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("academic_verification_history")
+}
+
+model StudentTransfer {
+  id           String         @id @default(uuid())
+  studentId    String         @map("student_id")
+  student      StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  fromBranchId Int            @map("from_branch_id")
+  toBranchId   Int            @map("to_branch_id")
+  fromBatchId  Int            @map("from_batch_id")
+  toBatchId    Int            @map("to_batch_id")
+  reason       String
+  status       TransferStatus @default(pending)
+  approvedBy   String?        @map("approved_by")
+  approvedAt   DateTime?      @map("approved_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@map("student_transfers")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model ProfileCorrectionRequest {
+  id              String                  @id @default(uuid())
+  studentId       String                  @map("student_id")
+  student         StudentProfile          @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  fieldRequested  String                  @map("field_requested")
+  requestedValue  String                  @map("requested_value")
+  reason          String
+  documentUrl     String?                 @map("document_url")
+  status          CorrectionRequestStatus @default(pending)
+  reviewedBy      String?                 @map("reviewed_by")
+  rejectionReason String?                 @map("rejection_reason")
+  reviewedAt      DateTime?               @map("reviewed_at")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@map("profile_correction_requests")
+}
+
+// ============================================================
+// ELIGIBILITY & SHORTLISTING ENGINE (Challenges 36–50)
+// ============================================================
+
+model DriveEligibilityCriteria {
+  id           String         @id @default(uuid())
+  driveId      String         @map("drive_id")
+  drive        PlacementDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  version      Int
+  criteria     Json
+  changeReason String?        @map("change_reason")
+  createdBy    String         @map("created_by")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  supersededAt DateTime?      @map("superseded_at")
+
+  @@unique([driveId, version])
+  @@index([driveId, supersededAt])
+  @@map("drive_eligibility_criteria")
+}
+
+model EligibilityEvaluation {
+  id              String           @id @default(uuid())
+  studentId       String           @map("student_id")
+  student         User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  driveId         String           @map("drive_id")
+  drive           PlacementDrive   @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  criteriaVersion Int              @map("criteria_version")
+  status          EvaluationStatus
+  criteriaResults Json             @map("criteria_results")
+  overrideReason  String?          @map("override_reason")
+  overriddenBy    String?          @map("overridden_by")
+  isCurrent       Boolean          @default(true) @map("is_current")
+  evaluatedAt     DateTime         @default(now()) @map("evaluated_at")
+
+  shortlistDecisions ShortlistDecision[]
+
+  @@index([studentId, driveId, isCurrent])
+  @@index([driveId, isCurrent])
+  @@map("eligibility_evaluations")
+}
+
+model SupplementaryExam {
+  id             String    @id @default(uuid())
+  studentId      String    @map("student_id")
+  student        User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject        String
+  semesterNumber Int       @map("semester_number")
+  attemptNumber  Int       @default(1) @map("attempt_number")
+  result         String // pending | passed | failed | cleared_official
+  verifiedBy     String?   @map("verified_by")
+  verifiedAt     DateTime? @map("verified_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("supplementary_exams")
+}
+
+model EducationHistory {
+  id              String  @id @default(uuid())
+  studentId       String  @map("student_id")
+  student         User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  level           String // tenth | twelfth | diploma | undergraduate
+  institutionName String? @map("institution_name")
+  startYear       Int?    @map("start_year")
+  endYear         Int?    @map("end_year")
+  gapExplanation  String? @map("gap_explanation")
+  gapDocVerified  Boolean @default(false) @map("gap_doc_verified")
+  isVerified      Boolean @default(false) @map("is_verified")
+  verifiedBy      String? @map("verified_by")
+
+  @@index([studentId])
+  @@map("education_history")
+}
+
+model ShortlistDecision {
+  id                     String                 @id @default(uuid())
+  driveId                String                 @map("drive_id")
+  drive                  PlacementDrive         @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  studentId              String                 @map("student_id")
+  student                User                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  action                 ShortlistAction
+  evaluationId           String?                @map("evaluation_id")
+  evaluation             EligibilityEvaluation? @relation(fields: [evaluationId], references: [id])
+  conflictOverrideReason String?                @map("conflict_override_reason")
+  decidedBy              String                 @map("decided_by")
+  decidedAt              DateTime               @default(now()) @map("decided_at")
+
+  @@unique([driveId, studentId])
+  @@index([studentId])
+  @@map("shortlist_decisions")
+}
+
+// ============================================================
+// TRAINING & LEARNING MANAGEMENT (Challenges 51–65)
+// ============================================================
+
+model TrainingSession {
+  id                 String          @id @default(uuid())
+  title              String
+  description        String?
+  topicId            Int?            @map("topic_id")
+  topic              Topic?          @relation(fields: [topicId], references: [id])
+  moduleId           String?         @map("module_id")
+  module             LearningModule? @relation(fields: [moduleId], references: [id])
+  scheduledAt        DateTime        @map("scheduled_at")
+  durationMins       Int             @default(60) @map("duration_mins")
+  learningObjectives String[]        @map("learning_objectives")
+  location           String?
+  meetingLink        String?         @map("meeting_link")
+  createdBy          String          @map("created_by")
+  creator            User            @relation("SessionCreator", fields: [createdBy], references: [id])
+  cancelledAt        DateTime?       @map("cancelled_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  startTime          DateTime?       @map("start_time")
+  endTime            DateTime?       @map("end_time")
+
+  assignments TrainingAssignment[]
+  trainers    TrainerSessionAssignment[]
+  feedback    TrainerFeedback[]
+
+  @@index([scheduledAt])
+  @@map("training_sessions")
+}
+
+model TrainingAssignment {
+  id             String                 @id @default(uuid())
+  sessionId      String                 @map("session_id")
+  session        TrainingSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId      String                 @map("student_id")
+  student        User                   @relation("TrainingAssignee", fields: [studentId], references: [id])
+  status         TrainingActivityStatus @default(scheduled)
+  completedAt    DateTime?              @map("completed_at")
+  lastRemindedAt DateTime?              @map("last_reminded_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  @@unique([sessionId, studentId])
+  @@index([studentId, status])
+  @@map("training_assignments")
+}
+
+model ResourceVersion {
+  id          String   @id @default(uuid())
+  resourceId  String   @map("resource_id")
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  version     Int
+  title       String
+  fileUrl     String   @map("file_url")
+  description String?
+  archivedBy  String   @map("archived_by")
+  archivedAt  DateTime @default(now()) @map("archived_at")
+
+  @@index([resourceId])
+  @@map("resource_versions")
+}
+
+model ResourceLinkCheck {
+  id                  String     @id @default(uuid())
+  resourceId          String     @map("resource_id")
+  resource            Resource   @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  url                 String
+  status              LinkStatus @default(unknown)
+  consecutiveFailures Int        @default(0) @map("consecutive_failures")
+  lastCheckedAt       DateTime?  @map("last_checked_at")
+  lastOkAt            DateTime?  @map("last_ok_at")
+
+  @@unique([resourceId, url])
+  @@map("resource_link_checks")
+}
+
+model ResourceAccessLog {
+  id         String   @id @default(uuid())
+  resourceId String   @map("resource_id")
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation("ResourceAccessor", fields: [userId], references: [id])
+  action     String   // view | download
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([resourceId])
+  @@map("resource_access_logs")
+}
+
+model LearningModule {
+  id               String      @id @default(uuid())
+  title            String
+  description      String?
+  level            ModuleLevel
+  topicId          Int?        @map("topic_id")
+  topic            Topic?      @relation(fields: [topicId], references: [id])
+  resourceId       String?     @unique @map("resource_id")
+  resource         Resource?   @relation("ModuleResource", fields: [resourceId], references: [id])
+  assessmentTestId String?     @map("assessment_test_id")
+  codingProblemId  String?     @map("coding_problem_id")
+  minPassingScore  Int         @default(60) @map("min_passing_score")
+  orderIndex       Int         @default(0) @map("order_index")
+  requiredSkills   String[]    @map("required_skills")
+  createdBy        String      @map("created_by")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  prerequisites     ModulePrerequisite[] @relation("Module")
+  isPrerequisiteFor ModulePrerequisite[] @relation("Prerequisite")
+  progress          ModuleProgress[]
+  trainingSessions  TrainingSession[]
+
+  @@map("learning_modules")
+}
+
+model ModulePrerequisite {
+  moduleId             String         @map("module_id")
+  module               LearningModule @relation("Module", fields: [moduleId], references: [id], onDelete: Cascade)
+  prerequisiteModuleId String         @map("prerequisite_module_id")
+  prerequisiteModule   LearningModule @relation("Prerequisite", fields: [prerequisiteModuleId], references: [id], onDelete: Cascade)
+
+  @@id([moduleId, prerequisiteModuleId])
+  @@map("module_prerequisites")
+}
+
+model ModuleProgress {
+  id                    String               @id @default(uuid())
+  studentId             String               @map("student_id")
+  student               User                 @relation("ModuleLearner", fields: [studentId], references: [id])
+  moduleId              String               @map("module_id")
+  module                LearningModule       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  status                ModuleProgressStatus @default(not_started)
+  prereqExceptionReason String?              @map("prereq_exception_reason")
+  prereqExceptionBy     String?              @map("prereq_exception_by")
+  attempts              Int                  @default(0)
+  bestScore             Int?
+  verifiedBy            String?              @map("verified_by")
+  completedAt           DateTime?            @map("completed_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  @@unique([studentId, moduleId])
+  @@index([studentId])
+  @@map("module_progress")
+}
+
+model VideoProgress {
+  id              String   @id @default(uuid())
+  studentId       String   @map("student_id")
+  student         User     @relation("VideoWatcher", fields: [studentId], references: [id])
+  resourceId      String   @map("resource_id")
+  resource        Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  positionSeconds Int      @default(0) @map("position_seconds")
+  durationSeconds Int?     @map("duration_seconds")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([studentId, resourceId])
+  @@map("video_progress")
+}
+
+model CompetencyRecord {
+  id         String      @id @default(uuid())
+  studentId  String      @map("student_id")
+  student    User        @relation("CompetencyHolder", fields: [studentId], references: [id])
+  skill      String
+  level      ModuleLevel
+  evidence   Json
+  moduleId   String?     @map("module_id")
+  verifiedBy String      @map("verified_by")
+  verifiedAt DateTime    @default(now()) @map("verified_at")
+
+  @@unique([studentId, skill])
+  @@index([studentId])
+  @@map("competency_records")
+}
+
+// ============================================================
+// PERSONALIZED LEARNING & RECOMMENDATIONS (Challenges 66–80)
+// ============================================================
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum ConfidenceLevel {
+  insufficient
+  low
+  moderate
+  high
+}
+
+enum IntegrityFlagType {
+  rapid_completion
+  suspicious_pattern
+  abnormal_improvement
+}
+
+enum IntegrityFlagStatus {
+  open
+  reviewed
+  dismissed
+}
+
+enum RecommendationPriority {
+  high
+  medium
+  low
+}
+
+model DeclaredSkill {
+  id            String          @id @default(uuid())
+  studentId     String          @map("student_id")
+  student       User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skill         String
+  declaredLevel SkillLevel      @default(beginner) @map("declared_level")
+  verifiedLevel SkillLevel?     @map("verified_level")
+  confidence    ConfidenceLevel @default(insufficient)
+  evidenceCount Int             @default(0) @map("evidence_count")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@unique([studentId, skill])
+  @@index([studentId])
+  @@map("declared_skills")
+}
+
+model SkillEvidence {
+  id             String          @id @default(uuid())
+  studentId      String          @map("student_id")
+  student        User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skill          String
+  source         String
+  score          Float?
+  accuracy       Float?
+  totalQuestions Int?            @map("total_questions")
+  confidence     ConfidenceLevel @default(insufficient)
+  testAttemptId  String?         @map("test_attempt_id")
+  testAttempt    TestAttempt?    @relation(fields: [testAttemptId], references: [id], onDelete: SetNull)
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([studentId, skill])
+  @@map("skill_evidence")
+}
+
+model AssessmentIntegrityFlag {
+  id         String              @id @default(uuid())
+  studentId  String              @map("student_id")
+  student    User                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attemptId  String              @map("attempt_id")
+  attempt    TestAttempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  flagType   IntegrityFlagType   @map("flag_type")
+  status     IntegrityFlagStatus @default(open)
+  details    Json
+  reviewedBy String?             @map("reviewed_by")
+  reviewNote String?             @map("review_note")
+  reviewedAt DateTime?           @map("reviewed_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@map("assessment_integrity_flags")
+}
+
+model StudentRecommendation {
+  id          String                 @id @default(uuid())
+  studentId   String                 @map("student_id")
+  student     User                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  resourceId  String                 @map("resource_id")
+  resource    Resource               @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  priority    RecommendationPriority @default(medium)
+  reason      Json
+  isDismissed Boolean                @default(false) @map("is_dismissed")
+  dismissedAt DateTime?              @map("dismissed_at")
+  generatedAt DateTime               @default(now()) @map("generated_at")
+
+  @@unique([studentId, resourceId])
+  @@index([studentId, isDismissed])
+  @@map("student_recommendations")
+}
+
+model ReadinessSnapshot {
+  id         String          @id @default(uuid())
+  studentId  String          @map("student_id")
+  student    User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  overall    Int?
+  label      String
+  confidence ConfidenceLevel @default(insufficient)
+  breakdown  Json
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([studentId, createdAt])
+  @@map("readiness_snapshots")
+}
+
+model CareerGoal {
+  id        String   @id @default(uuid())
+  studentId String   @unique @map("student_id")
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("career_goals")
+}
+
+model QuestionVersion {
+  id           String           @id @default(uuid())
+  questionId   String           @map("question_id")
+  question     AptitudeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  version      Int
+  snapshot     Json
+  changeReason String           @map("change_reason")
+  archivedBy   String           @map("archived_by")
+  archivedAt   DateTime         @default(now()) @map("archived_at")
+
+  @@index([questionId])
+  @@map("question_versions")
+}
+
+model AttemptActivityLog {
+  id        String            @id @default(uuid())
+  attemptId String            @map("attempt_id")
+  attempt   TestAttempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  studentId String            @map("student_id")
+  student   User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  eventType ActivityEventType @map("event_type")
+  details   Json?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@index([attemptId])
+  @@index([studentId])
+  @@map("attempt_activity_logs")
+}
+
+enum ResumeParseStatus {
+  pending
+  parsed
+  failed
+  needs_review
+}
+
+model ResumeVersion {
+  id           String            @id @default(uuid())
+  studentId    String            @map("student_id")
+  student      User              @relation("ResumeOwner", fields: [studentId], references: [id], onDelete: Cascade)
+  version      Int
+  label        String            @default("General Resume")
+  originalName String            @map("original_name")
+  storageKey   String            @unique @map("storage_key") // internal filename — never a public URL
+  mimeType     String            @map("mime_type")
+  fileSize     Int               @map("file_size")
+  isActive     Boolean           @default(false)
+  parseStatus  ResumeParseStatus @default(pending) @map("parse_status")
+  parsedData   Json?             @map("parsed_data") // UNVERIFIED extraction (Ch 106)
+  privacyScan  Json?             @map("privacy_scan")
+  uploadedAt   DateTime          @default(now()) @map("uploaded_at")
+
+  applications DriveApplication[]
+  accessTokens ResumeAccessToken[]
+
+  @@unique([studentId, version])
+  @@index([studentId, isActive])
+  @@map("resume_versions")
+}
+
+model ResumeAccessToken {
+  id              String        @id @default(uuid())
+  resumeVersionId String        @map("resume_version_id")
+  resumeVersion   ResumeVersion @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  tokenHash       String        @unique @map("token_hash")
+  expiresAt       DateTime      @map("expires_at")
+  createdBy       String        @map("created_by")
+  usedAt          DateTime?     @map("used_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("resume_access_tokens")
+}
+
+// ============================================================
+// MOCK INTERVIEWS & MANAGEMENT (Challenges 116–130)
+// ============================================================
+
+enum InterviewStatus {
+  scheduled
+  confirmed
+  in_progress
+  completed
+  interrupted
+  failed
+  cancelled
+  rescheduled
+  no_show
+}
+
+enum InterviewType {
+  technical
+  hr
+  aptitude
+  group_discussion
+  managerial
+  technical_mechanical
+  hr_behavioral
+  mixed
+}
+
+model InterviewRubric {
+  id          String   @id @default(uuid())
+  version     Int
+  name        String
+  criteria    Json     // [{ key: 'technical', label: 'Technical Knowledge', maxScore: 10, studentVisible: true }]
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  interviews  MockInterview[]
+
+  @@unique([name, version])
+  @@map("interview_rubrics")
+}
+
+model AcademicExam {
+  id         String   @id @default(uuid())
+  studentId  String   @map("student_id")
+  student    User     @relation("ExamStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  subject    String
+  startTime  DateTime @map("start_time")
+  endTime    DateTime @map("end_time")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([studentId, startTime])
+  @@map("academic_exams")
+}
+
+model InterviewerAvailability {
+  id            String   @id @default(uuid())
+  interviewerId String   @map("interviewer_id")
+  interviewer   User     @relation("AvailabilityInterviewer", fields: [interviewerId], references: [id], onDelete: Cascade)
+  startTime     DateTime @map("start_time")
+  endTime       DateTime @map("end_time")
+  isAvailable   Boolean  @default(true) @map("is_available")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([interviewerId, startTime])
+  @@map("interviewer_availability")
+}
+
+model MockInterview {
+  id                  String                     @id @default(uuid())
+  studentId           String                     @map("student_id")
+  student             User                       @relation("InterviewStudent", fields: [studentId], references: [id])
+  interviewerId       String                     @map("interviewer_id")
+  interviewer         User                       @relation("Interviewer", fields: [interviewerId], references: [id])
+  type                InterviewType              @default(technical)
+  status              InterviewStatus            @default(scheduled)
+  startTime           DateTime                   @map("start_time")
+  endTime             DateTime                   @map("end_time")
+  meetingLink         String?                    @map("meeting_link")
+  rubricId            String?                    @map("rubric_id")
+  rubric              InterviewRubric?           @relation(fields: [rubricId], references: [id])
+  applicationId       String?                    @map("application_id")
+  application         DriveApplication?          @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  cancellationReason  String?                    @map("cancellation_reason")
+  createdBy           String                     @map("created_by")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+
+  feedback            InterviewFeedback?
+  history             InterviewSessionHistory[]
+  rescheduleRequests  InterviewRescheduleRequest[]
+
+  @@unique([studentId, startTime, type]) // Ch 127: prevents duplicate appointments
+  @@unique([interviewerId, startTime])   // Ch 127: prevents interviewer double-booking
+  @@index([studentId, status])
+  @@index([interviewerId, status])
+  @@map("mock_interviews")
+}
+
+model InterviewSessionHistory {
+  id          String          @id @default(uuid())
+  interviewId String          @map("interview_id")
+  interview   MockInterview   @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  action      String          // schedule, reschedule, cancel, interrupt, resume, complete
+  details     Json?
+  actorId     String          @map("actor_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@index([interviewId])
+  @@map("interview_session_history")
+}
+
+model InterviewFeedback {
+  id                String         @id @default(uuid())
+  interviewId       String?        @unique @map("interview_id")
+  interview         MockInterview? @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  scores            Json          // { technical: 8, communication: 7, ... }
+  studentComments   String        @map("student_comments")
+  confidentialNotes String?       @map("confidential_notes")
+  isFinalized       Boolean       @default(false) @map("is_finalized")
+  evaluatedBy       String        @map("evaluated_by")
+  evaluatedAt       DateTime      @default(now()) @map("evaluated_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@index([interviewId]) // Challenge 294: Explicit index on interview feedback
+  @@map("interview_feedback")
+}
+
+model InterviewRescheduleRequest {
+  id            String        @id @default(uuid())
+  interviewId   String        @map("interview_id")
+  interview     MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  requestedBy   String        @map("requested_by")
+  reason        String
+  proposedTime  DateTime      @map("proposed_time")
+  status        String        @default("pending") // pending, approved, rejected
+  reviewedBy    String?       @map("reviewed_by")
+  reviewedAt    DateTime?     @map("reviewed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("interview_reschedule_requests")
+}
+
+// ============================================================
+// TRAINER MANAGEMENT (Challenges 176–185)
+// ============================================================
+
+model TrainerProfile {
+  userId         String   @id @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization String[]
+  expertise      String[]
+  maxWorkload    Int      @default(20) @map("max_workload") // hours per week
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("trainer_profiles")
+}
+
+model TrainerBatchAssignment {
+  id         String      @id @default(uuid())
+  trainerId  String      @map("trainer_id")
+  trainer    User        @relation("TrainerAssignee", fields: [trainerId], references: [id])
+  batchId    Int         @map("batch_id")
+  batch      Batch       @relation(fields: [batchId], references: [id])
+  role       TrainerRole @default(primary)
+  assignedBy String      @map("assigned_by")
+  assignedAt DateTime    @default(now()) @map("assigned_at")
+  isActive   Boolean     @default(true) @map("is_active")
+
+  @@unique([trainerId, batchId])
+  @@map("trainer_batch_assignments")
+}
+
+model AcademicTimetable {
+  id        String   @id @default(uuid())
+  batchId   Int      @map("batch_id")
+  batch     Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  dayOfWeek Int      @map("day_of_week") // 0=Sun, 6=Sat
+  startTime String   @map("start_time") // HH:mm
+  endTime   String   @map("end_time")
+  subject   String
+
+  @@map("academic_timetables")
+}
+
+model TrainerSessionAssignment {
+  id        String          @id @default(uuid())
+  sessionId String          @map("session_id")
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  trainerId String          @map("trainer_id")
+  trainer   User            @relation("SessionTrainer", fields: [trainerId], references: [id])
+  role      TrainerRole     @default(primary)
+
+  @@unique([sessionId, trainerId])
+  @@map("trainer_session_assignments")
+}
+
+model TrainerFeedback {
+  id          String           @id @default(uuid())
+  trainerId   String           @map("trainer_id")
+  trainer     User             @relation("FeedbackTrainer", fields: [trainerId], references: [id])
+  studentId   String           @map("student_id")
+  student     User             @relation("FeedbackStudent", fields: [studentId], references: [id])
+  sessionId   String?          @map("session_id")
+  session     TrainingSession? @relation(fields: [sessionId], references: [id])
+  ratings     Json             // { teaching: 5, knowledge: 4 }
+  comments    String?
+  isAnonymous Boolean          @default(true) @map("is_anonymous")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("trainer_feedback")
+}
+
+model TrainerTask {
+  id             String     @id @default(uuid())
+  trainerId      String     @map("trainer_id")
+  trainer        User       @relation("TaskTrainer", fields: [trainerId], references: [id])
+  title          String
+  description    String?
+  deadline       DateTime?
+  status         TaskStatus @default(pending)
+  acknowledgedAt DateTime?  @map("acknowledged_at")
+  completedAt    DateTime?  @map("completed_at")
+  createdBy      String     @map("created_by")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  @@map("trainer_tasks")
+}
+
+model StudentIntervention {
+  id           String               @id @default(uuid())
+  studentId    String               @map("student_id")
+  student      User                 @relation("InterventionStudent", fields: [studentId], references: [id])
+  trainerId    String               @map("trainer_id")
+  trainer      User                 @relation("InterventionTrainer", fields: [trainerId], references: [id])
+  severity     InterventionSeverity @default(medium)
+  reason       String
+  action       String?
+  status       InterventionStatus   @default(open)
+  followUpDate DateTime?            @map("follow_up_date")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  @@map("student_interventions")
+}
+
+model TrainerEvaluation {
+  id          String   @id @default(uuid())
+  trainerId   String   @map("trainer_id")
+  trainer     User     @relation("EvalTrainer", fields: [trainerId], references: [id])
+  period      String   // e.g., "2024-Q1"
+  metrics     Json     // { avgStudentFeedback: 4.5, avgAttendance: 80, completionRate: 90 }
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  @@unique([trainerId, period])
+  @@map("trainer_evaluations")
+}
+
+// ============================================================
+// SYSTEM CONFIGURATION & AUDIT (Challenge 199)
+// ============================================================
+
+model SystemSettingHistory {
+  id        String   @id @default(uuid())
+  key       String
+  oldValue  String?  @map("old_value")
+  newValue  String   @map("new_value")
+  changedBy String   @map("changed_by")
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  @@index([key])
+  @@map("system_setting_history")
+}
+
+// ============================================================
+// DATA PRIVACY & COMPLIANCE (Challenges 326–335)
+// ============================================================
+
+enum ConsentType {
+  placement_sharing
+  marketing_communications
+  data_processing
+}
+
+enum DataRequestType {
+  correction
+  deletion
+  data_export
+}
+
+enum DataRequestStatus {
+  pending
+  under_review
+  approved
+  rejected
+  completed
+}
+
+enum RetentionAction {
+  anonymize
+  delete
+}
+
+model ConsentRecord {
+  id            String      @id @default(uuid())
+  studentId     String      @map("student_id")
+  student       User        @relation("ConsentStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  type          ConsentType
+  isGranted     Boolean     @default(false) @map("is_granted")
+  policyVersion String      @default("1.0") @map("policy_version")
+  grantedAt     DateTime?   @map("granted_at")
+  revokedAt     DateTime?   @map("revoked_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@unique([studentId, type])
+  @@map("consent_records")
+}
+
+model DataAccessLog {
+  id            String   @id @default(uuid())
+  actorId       String   @map("actor_id")
+  actor         User     @relation("AccessActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUserId  String   @map("target_user_id")
+  targetUser    User     @relation("AccessTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  resourceType  String   @map("resource_type") // 'resume', 'academic_profile', 'contact_info'
+  action        String   // 'view', 'download', 'share'
+  requestId     String?  @map("request_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([targetUserId])
+  @@index([actorId])
+  @@map("data_access_logs")
+}
+
+model DataShareLog {
+  id           String   @id @default(uuid())
+  studentId    String   @map("student_id")
+  student      User     @relation("SharedStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  companyId    String   @map("company_id")
+  company      Company  @relation("SharedCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  driveId      String?  @map("drive_id")
+  sharedBy     String   @map("shared_by")
+  dataTypes    String[] // ['resume', 'cgpa', 'contact']
+  sharedAt     DateTime @default(now()) @map("shared_at")
+
+  @@index([studentId])
+  @@index([companyId])
+  @@map("data_share_logs")
+}
+
+model DataRequest {
+  id           String            @id @default(uuid())
+  studentId    String            @map("student_id")
+  student      User              @relation("RequestingStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  type         DataRequestType
+  details      String
+  status       DataRequestStatus @default(pending)
+  reviewedBy   String?           @map("reviewed_by")
+  reviewedAt   DateTime?         @map("reviewed_at")
+  resolution   String?
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@map("data_requests")
+}
+
+model RetentionPolicy {
+  id            String          @id @default(uuid())
+  dataCategory  String          @unique @map("data_category") // 'StudentProfile', 'Notification', 'AuditLog'
+  retentionDays Int             @map("retention_days")
+  action        RetentionAction @default(anonymize)
+  isActive      Boolean         @default(true) @map("is_active")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@map("retention_policies")
+}
+
+enum TrainingResourceType {
+  course
+  dataset
+  coding_challenge
+  aptitude_test
+  interview_question
+  industry_report
+  project_idea
+}
+
+enum SyncStatus {
+  pending
+  running
+  success
+  failed
+}
+
+model TrainingResource {
+  id           String               @id @default(uuid())
+  title        String
+  description  String?
+  resourceType TrainingResourceType @map("resource_type")
+  provider     String? // e.g., "NPTEL", "Kaggle", "Internal"
+  externalUrl  String?              @map("external_url")
+  category     String? // e.g., "AI", "DSA", "Cloud"
+  difficulty   String? // Beginner, Intermediate, Advanced
+  accessType   String               @default("Free") @map("access_type") // Free, Paid
+  durationHrs  Float?               @map("duration_hrs")
+  tags         String[]
+  status       String               @default("published") // pending_review, published, archived
+  careerTrackId String?             @map("career_track_id")
+  careerTrack   CareerTrack?        @relation("CareerTrackResources", fields: [careerTrackId], references: [id])
+  createdBy    String               @map("created_by")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  bookmarks    ResourceBookmark[]
+  progress     ResourceProgress[]
+
+  @@index([resourceType, category, status])
+  @@map("training_resources")
+}
+
+model ResourceProvider {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  baseUrl         String            @map("base_url")
+  providerType    String            @map("provider_type") // dataset, learning, coding
+  integrationType String            @default("manual") @map("integration_type") // api, rss, manual
+  syncEnabled     Boolean           @default(false) @map("sync_enabled")
+  lastSyncedAt    DateTime?         @map("last_synced_at")
+  lastSyncStatus  SyncStatus?       @map("last_sync_status")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  syncJobs        ResourceSyncJob[]
+  @@map("resource_providers")
+}
+
+model ResourceSyncJob {
+  id             String           @id @default(uuid())
+  providerId     String           @map("provider_id")
+  provider       ResourceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  status         SyncStatus       @default(pending)
+  startedAt      DateTime?        @map("started_at")
+  completedAt    DateTime?        @map("completed_at")
+  recordsFetched Int              @default(0) @map("records_fetched")
+  recordsCreated Int              @default(0) @map("records_created")
+  errorSummary   String?          @map("error_summary")
+  initiatedBy    String           @map("initiated_by")
+
+  @@index([providerId, status])
+  @@map("resource_sync_jobs")
+}
+
+model ResourceBookmark {
+  id         String           @id @default(uuid())
+  studentId  String           @map("student_id")
+  resourceId String           @map("resource_id")
+  resource   TrainingResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@unique([studentId, resourceId])
+  @@map("resource_bookmarks")
+}
+
+model ResourceProgress {
+  id                 String           @id @default(uuid())
+  studentId          String           @map("student_id")
+  resourceId         String           @map("resource_id")
+  resource           TrainingResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  status             String           @default("not_started") // not_started, in_progress, completed
+  progressPercentage Float            @default(0) @map("progress_percentage")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  @@unique([studentId, resourceId])
+  @@map("resource_progress")
+}
+
+// ============================================================
+// MECHANICAL ENGINEERING TRAINING MODULE
+// ============================================================
+
+enum CareerTrackType {
+  design_engineer
+  production_engineer
+  quality_engineer
+  maintenance_engineer
+  thermal_hvac_engineer
+  automotive_ev_engineer
+  automation_robotics_engineer
+  cae_simulation_engineer
+  project_field_engineer
+  energy_aerospace_engineer
+  graduate_engineer_trainee
+}
+
+enum ProjectStatus {
+  not_started
+  in_progress
+  submitted
+  evaluated
+  revision_required
+}
+
+enum SubmissionStatus {
+  pending
+  under_review
+  approved
+  rejected
+  revision_requested
+}
+
+// Mechanical Engineering Subjects
+model EngineeringSubject {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique
+  category    String   // e.g., "Thermal", "Design", "Manufacturing"
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  topics      EngineeringTopic[]
+  questions   MechanicalQuestion[]
+
+  @@map("engineering_subjects")
+}
+
+model EngineeringTopic {
+  id          Int      @id @default(autoincrement())
+  subjectId   Int      @map("subject_id")
+  subject     EngineeringSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([subjectId, name])
+  @@map("engineering_topics")
+}
+
+// Career Tracks for Mechanical Engineering
+model CareerTrack {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  trackType   CareerTrackType @map("track_type")
+  description String?
+  targetRoles String[]        @map("target_roles")
+  requiredSkills String[]     @map("required_skills")
+  recommendedSoftware String[] @map("recommended_software")
+  isActive    Boolean         @default(true) @map("is_active")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt      @map("updated_at")
+
+  enrollments StudentCareerTrack[]
+  resources   TrainingResource[] @relation("CareerTrackResources")
+  projects    EngineeringProject[]
+  mockInterviews MockInterviewSession[]
+
+  @@map("career_tracks")
+}
+
+model StudentCareerTrack {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  student     User     @relation("MechCareerTrackStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  careerTrackId String @map("career_track_id")
+  careerTrack CareerTrack @relation(fields: [careerTrackId], references: [id], onDelete: Cascade)
+  enrolledAt  DateTime @default(now()) @map("enrolled_at")
+  progress    Float    @default(0)
+
+  @@unique([studentId, careerTrackId])
+  @@map("student_career_tracks")
+}
+
+// Mechanical Engineering Question Bank
+model MechanicalQuestion {
+  id            String   @id @default(uuid())
+  subjectId     Int      @map("subject_id")
+  subject       EngineeringSubject @relation(fields: [subjectId], references: [id])
+  topic         String?
+  questionText  String   @map("question_text")
+  questionType  String   @default("mcq") // mcq, multiple_select, numerical, conceptual
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  explanation   String?
+  difficulty    String   @default("medium") // easy, medium, hard
+  marks         Int      @default(1)
+  negativeMarks Float    @default(0) @map("negative_marks")
+  formula       String?
+  unit          String?
+  careerTrackId String?  @map("career_track_id")
+  status        String   @default("draft") // draft, verified, published
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subjectId, status, difficulty])
+  @@map("mechanical_questions")
+}
+
+// Engineering Projects
+model EngineeringProject {
+  id              String   @id @default(uuid())
+  title           String
+  problemStatement String  @map("problem_statement")
+  domain          String   // e.g., "Thermal", "Manufacturing", "Automotive"
+  careerTrackId   String?  @map("career_track_id")
+  careerTrack     CareerTrack? @relation(fields: [careerTrackId], references: [id])
+  skillsInvolved  String[] @map("skills_involved")
+  requiredSoftware String[] @map("required_software")
+  difficulty      String   @default("intermediate")
+  expectedDeliverables String[] @map("expected_deliverables")
+  methodology     String?
+  evaluationCriteria String? @map("evaluation_criteria")
+  estimatedDurationWeeks Int? @map("estimated_duration_weeks")
+  status          String   @default("published")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  submissions     ProjectSubmission[]
+
+  @@map("engineering_projects")
+}
+
+model ProjectSubmission {
+  id          String          @id @default(uuid())
+  projectId   String          @map("project_id")
+  project     EngineeringProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  studentId   String          @map("student_id")
+  student     User            @relation("MechProjectStudent", fields: [studentId], references: [id])
+  status      SubmissionStatus @default(pending)
+  fileUrl     String?         @map("file_url")
+  fileName    String?         @map("file_name")
+  reportUrl   String?         @map("report_url")
+  notes       String?
+  submittedAt DateTime?       @map("submitted_at")
+  evaluatedAt DateTime?       @map("evaluated_at")
+  evaluatedBy String?         @map("evaluated_by")
+  marks       Float?
+  feedback    String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt      @map("updated_at")
+
+  @@unique([projectId, studentId])
+  @@map("project_submissions")
+}
+
+// Practical Engineering Assessments
+model PracticalAssessment {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  assessmentType  String   @map("assessment_type") // drawing_interpretation, cad_modeling, manufacturing_analysis, etc.
+  careerTrackId   String?  @map("career_track_id")
+  problemStatement String  @map("problem_statement")
+  instructions    String?
+  expectedOutput  String?  @map("expected_output")
+  evaluationRubric Json?
+  difficulty      String   @default("intermediate")
+  estimatedTime   Int?     @map("estimated_time") // minutes
+  status          String   @default("published")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  submissions     PracticalSubmission[]
+
+  @@map("practical_assessments")
+}
+
+model PracticalSubmission {
+  id              String          @id @default(uuid())
+  assessmentId    String          @map("assessment_id")
+  assessment      PracticalAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentId       String          @map("student_id")
+  student         User            @relation("MechPracticalStudent", fields: [studentId], references: [id])
+  status          SubmissionStatus @default(pending)
+  fileUrl         String?         @map("file_url")
+  fileName        String?         @map("file_name")
+  reportText      String?         @map("report_text")
+  submittedAt     DateTime?       @map("submitted_at")
+  evaluatedAt     DateTime?       @map("evaluated_at")
+  evaluatedBy     String?         @map("evaluated_by")
+  marks           Float?
+  feedback        String?
+  rubricScores    Json?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt      @map("updated_at")
+
+  @@unique([assessmentId, studentId])
+  @@map("practical_submissions")
+}
+
+// Company Preparation for Mechanical Engineering
+model MechanicalCompanyProfile {
+  id              String   @id @default(uuid())
+  companyName     String   @unique @map("company_name")
+  industry        String   // Automotive, Manufacturing, Energy, Aerospace, etc.
+  officialUrl     String?  @map("official_url")
+  careersUrl      String?  @map("careers_url")
+  description     String?
+  relevantRoles   String[] @map("relevant_roles")
+  requiredSkills  String[] @map("required_skills")
+  preferredSoftware String[] @map("preferred_software")
+  relevantSubjects String[] @map("relevant_subjects")
+  eligibilityCriteria String? @map("eligibility_criteria")
+  selectionProcess String? @map("selection_process")
+  aptitudePattern String?  @map("aptitude_pattern")
+  technicalFocus  String?  @map("technical_focus")
+  interviewAreas  String[] @map("interview_areas")
+  preparationResources String? @map("preparation_resources")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  lastVerifiedAt  DateTime? @map("last_verified_at")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("mechanical_company_profiles")
+}
+
+// Mock Interview System
+model MockInterviewSession {
+  id              String          @id @default(uuid())
+  studentId       String          @map("student_id")
+  student         User            @relation("MechMockInterviewStudent", fields: [studentId], references: [id])
+  interviewerId   String          @map("interviewer_id")
+  interviewer     User            @relation("MechMockInterviewer", fields: [interviewerId], references: [id])
+  interviewType   InterviewType   @map("interview_type")
+  careerTrackId   String?         @map("career_track_id")
+  careerTrack     CareerTrack?    @relation(fields: [careerTrackId], references: [id])
+  scheduledAt     DateTime        @map("scheduled_at")
+  duration        Int             @default(30) // minutes
+  status          InterviewStatus @default(scheduled)
+  questionsAsked  String[]        @map("questions_asked")
+  studentResponses String[]       @map("student_responses")
+  technicalScore   Float?         @map("technical_score")
+  communicationScore Float?      @map("communication_score")
+  overallScore    Float?          @map("overall_score")
+  feedback        String?
+  strengths       String[]        @default([])
+  improvementAreas String[]       @default([]) @map("improvement_areas")
+  completedAt     DateTime?       @map("completed_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt      @map("updated_at")
+
+  @@index([studentId, status])
+  @@map("mock_interview_sessions")
+}
+
+// Engineering Software Resources
+model EngineeringSoftware {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  category        String   // CAD, CAM, CAE, Programming, Analysis
+  vendor          String?
+  description     String?
+  learningUrl     String?  @map("learning_url")
+  trialUrl        String?  @map("trial_url")
+  isFree          Boolean  @default(false) @map("is_free")
+  hasStudentLicense Boolean @default(false) @map("has_student_license")
+  supportedFormats String[] @map("supported_formats")
+  careerTracks    String[] @map("career_tracks")
+  difficulty      String   @default("beginner")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("engineering_software")
+}
+
+// ============================================================
+// CIVIL ENGINEERING TRAINING MODULE
+// ============================================================
+
+model CivilQuestion {
+  id            String   @id @default(uuid())
+  subject       String   // e.g., "Structural Analysis", "Geotechnical Engineering"
+  topic         String?
+  questionText  String   @map("question_text")
+  questionType  String   @default("mcq")
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  explanation   String?
+  difficulty    String   @default("medium") // easy, medium, hard
+  marks         Int      @default(1)
+  negativeMarks Float    @default(0) @map("negative_marks")
+  formula       String?
+  unit          String?
+  status        String   @default("draft") // draft, verified, published
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subject, status, difficulty])
+  @@map("civil_questions")
+}
+
+model CivilCompanyProfile {
+  id              String   @id @default(uuid())
+  companyName     String   @unique @map("company_name")
+  industry        String   // Construction, Infrastructure, Consultancy, Government
+  officialUrl     String?  @map("official_url")
+  careersUrl      String?  @map("careers_url")
+  description     String?
+  relevantRoles   String[] @map("relevant_roles")
+  requiredSkills  String[] @map("required_skills")
+  preferredSoftware String[] @map("preferred_software")
+  relevantSubjects String[] @map("relevant_subjects")
+  eligibilityCriteria String? @map("eligibility_criteria")
+  selectionProcess String? @map("selection_process")
+  interviewAreas  String[] @map("interview_areas")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  lastVerifiedAt  DateTime? @map("last_verified_at")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("civil_company_profiles")
+}
+
+// ============================================================
+// ELECTRONICS AND COMMUNICATION ENGINEERING TRAINING MODULE
+// ============================================================
+
+model ECEQuestion {
+  id            String   @id @default(uuid())
+  subject       String   // e.g., "VLSI Design", "Embedded Systems", "Digital Communication"
+  topic         String?
+  questionText  String   @map("question_text")
+  questionType  String   @default("mcq") // mcq, multiple_select, numerical, hdl_code, circuit_analysis
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  explanation   String?
+  difficulty    String   @default("medium") // easy, medium, hard
+  marks         Int      @default(1)
+  negativeMarks Float    @default(0) @map("negative_marks")
+  formula       String?
+  unit          String?
+  circuitDiagram String? @map("circuit_diagram")
+  hdlCode       String?  @map("hdl_code")
+  careerTrackId String?  @map("career_track_id")
+  status        String   @default("draft") // draft, verified, published
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subject, status, difficulty])
+  @@map("ece_questions")
+}
+
+model ECECompanyProfile {
+  id               String   @id @default(uuid())
+  companyName      String   @unique @map("company_name")
+  industry         String   // Semiconductor, Telecommunications, Defense, Consumer Electronics
+  officialUrl      String?  @map("official_url")
+  careersUrl       String?  @map("careers_url")
+  description      String?
+  relevantRoles    String[] @map("relevant_roles")
+  requiredSkills   String[] @map("required_skills")
+  preferredSoftware String[] @map("preferred_software")
+  relevantSubjects  String[] @map("relevant_subjects")
+  eligibilityCriteria String? @map("eligibility_criteria")
+  selectionProcess String?  @map("selection_process")
+  aptitudePattern  String?  @map("aptitude_pattern")
+  technicalFocus   String?  @map("technical_focus")
+  interviewAreas   String[] @map("interview_areas")
+  isVerified       Boolean  @default(false) @map("is_verified")
+  lastVerifiedAt   DateTime? @map("last_verified_at")
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("ece_company_profiles")
+}
+
+model ECEPracticalAssessment {
+  id               String   @id @default(uuid())
+  title            String
+  description      String
+  assessmentType   String   @map("assessment_type") // hdl_simulation, circuit_design, embedded_code, signal_processing
+  careerTrackId    String?  @map("career_track_id")
+  problemStatement String   @map("problem_statement")
+  instructions     String?
+  circuitDiagramUrl String? @map("circuit_diagram_url")
+  expectedOutput   String?  @map("expected_output")
+  evaluationRubric Json?
+  difficulty       String   @default("intermediate")
+  estimatedTime    Int?     @map("estimated_time") // in minutes
+  status           String   @default("published")
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  submissions ECEPracticalSubmission[]
+
+  @@map("ece_practical_assessments")
+}
+
+model ECEPracticalSubmission {
+  id             String                 @id @default(uuid())
+  assessmentId   String                 @map("assessment_id")
+  assessment     ECEPracticalAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentId      String                 @map("student_id")
+  student        User                   @relation("ECEPracticalStudent", fields: [studentId], references: [id])
+  status         SubmissionStatus       @default(pending)
+  fileUrl        String?                @map("file_url")
+  fileName       String?                @map("file_name")
+  codeSubmission String?                @map("code_submission")
+  reportText     String?                @map("report_text")
+  submittedAt    DateTime?              @map("submitted_at")
+  evaluatedAt    DateTime?              @map("evaluated_at")
+  evaluatedBy    String?                @map("evaluated_by")
+  marks          Float?
+  feedback       String?
+  rubricScores   Json?
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  @@unique([assessmentId, studentId])
+  @@map("ece_practical_submissions")
+}
+
+// ============================================================
+// ELECTRICAL AND ELECTRONICS ENGINEERING TRAINING MODULE
+// ============================================================
+
+model EEEQuestion {
+  id            String   @id @default(uuid())
+  subject       String   // e.g., "Power Systems", "Electrical Machines", "Power Electronics"
+  topic         String?
+  questionText  String   @map("question_text")
+  questionType  String   @default("mcq") // mcq, multiple_select, numerical, circuit_analysis
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  explanation   String?
+  difficulty    String   @default("medium") // easy, medium, hard
+  marks         Int      @default(1)
+  negativeMarks Float    @default(0) @map("negative_marks")
+  formula       String?
+  unit          String?
+  circuitDiagram String? @map("circuit_diagram") // URL to circuit/schematic diagram
+  careerTrackId String?  @map("career_track_id")
+  status        String   @default("draft") // draft, verified, published
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subject, status, difficulty])
+  @@map("eee_questions")
+}
+
+model EEECompanyProfile {
+  id              String   @id @default(uuid())
+  companyName     String   @unique @map("company_name")
+  industry        String   // Power Generation, Electrical Equipment, Renewable Energy, EV, Automation, Government
+  officialUrl     String?  @map("official_url")
+  careersUrl      String?  @map("careers_url")
+  description     String?
+  relevantRoles   String[] @map("relevant_roles")
+  requiredSkills  String[] @map("required_skills")
+  preferredSoftware String[] @map("preferred_software")
+  relevantSubjects String[] @map("relevant_subjects")
+  eligibilityCriteria String? @map("eligibility_criteria")
+  selectionProcess String? @map("selection_process")
+  technicalFocus  String?  @map("technical_focus")
+  interviewAreas  String[] @map("interview_areas")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  lastVerifiedAt  DateTime? @map("last_verified_at")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("eee_company_profiles")
+}
+
+model EEEPracticalAssessment {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  assessmentType  String   @map("assessment_type") // circuit_design, power_system_analysis, machine_testing, plc_programming, solar_sizing
+  careerTrackId   String?  @map("career_track_id")
+  problemStatement String  @map("problem_statement")
+  instructions    String?
+  circuitDiagramUrl String? @map("circuit_diagram_url")
+  expectedOutput  String?  @map("expected_output")
+  evaluationRubric Json?
+  difficulty      String   @default("intermediate")
+  estimatedTime   Int?     @map("estimated_time") // minutes
+  status          String   @default("published")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  submissions     EEEPracticalSubmission[]
+
+  @@map("eee_practical_assessments")
+}
+
+model EEEPracticalSubmission {
+  id              String          @id @default(uuid())
+  assessmentId    String          @map("assessment_id")
+  assessment      EEEPracticalAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentId       String          @map("student_id")
+  student         User            @relation("EEEPracticalStudent", fields: [studentId], references: [id])
+  status          SubmissionStatus @default(pending)
+  fileUrl         String?         @map("file_url")
+  fileName        String?         @map("file_name")
+  reportText      String?         @map("report_text")
+  submittedAt     DateTime?       @map("submitted_at")
+  evaluatedAt     DateTime?       @map("evaluated_at")
+  evaluatedBy     String?         @map("evaluated_by")
+  marks           Float?
+  feedback        String?
+  rubricScores    Json?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt      @map("updated_at")
+
+  @@unique([assessmentId, studentId])
+  @@map("eee_practical_submissions")
+}
+
+// ============================================================
+// INFORMATION TECHNOLOGY TRAINING MODULE
+// ============================================================
+
+model ITQuestion {
+  id            String   @id @default(uuid())
+  subject       String   // e.g., "Web Development", "Cloud Computing", "DBMS", "Networking"
+  topic         String?
+  questionText  String   @map("question_text")
+  questionType  String   @default("mcq") // mcq, multiple_select, numerical, code_output, sql_query
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  explanation   String?
+  difficulty    String   @default("medium") // easy, medium, hard
+  marks         Int      @default(1)
+  negativeMarks Float    @default(0) @map("negative_marks")
+  codeSnippet   String?  @map("code_snippet") // For output prediction questions
+  sqlQuery      String?  @map("sql_query") // For SQL questions
+  careerTrackId String?  @map("career_track_id")
+  status        String   @default("draft") // draft, verified, published
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subject, status, difficulty])
+  @@map("it_questions")
+}
+
+model ITCompanyProfile {
+  id              String   @id @default(uuid())
+  companyName     String   @unique @map("company_name")
+  industry        String   // IT Services, Product, Cloud, Cybersecurity, Government
+  officialUrl     String?  @map("official_url")
+  careersUrl      String?  @map("careers_url")
+  description     String?
+  relevantRoles   String[] @map("relevant_roles")
+  requiredSkills  String[] @map("required_skills")
+  preferredLanguages String[] @map("preferred_languages")
+  preferredFrameworks String[] @map("preferred_frameworks")
+  relevantSubjects String[] @map("relevant_subjects")
+  eligibilityCriteria String? @map("eligibility_criteria")
+  selectionProcess String? @map("selection_process")
+  aptitudePattern String?  @map("aptitude_pattern")
+  codingPattern   String?  @map("coding_pattern")
+  technicalFocus  String?  @map("technical_focus")
+  interviewAreas  String[] @map("interview_areas")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  lastVerifiedAt  DateTime? @map("last_verified_at")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("it_company_profiles")
+}
+
+model ITPracticalAssessment {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  assessmentType  String   @map("assessment_type") // web_dev, api_dev, database, cloud, devops, security, data_analysis, testing
+  careerTrackId   String?  @map("career_track_id")
+  problemStatement String  @map("problem_statement")
+  instructions    String?
+  expectedOutput  String?  @map("expected_output")
+  evaluationRubric Json?
+  difficulty      String   @default("intermediate")
+  estimatedTime   Int?     @map("estimated_time") // minutes
+  status          String   @default("published")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  submissions     ITPracticalSubmission[]
+
+  @@map("it_practical_assessments")
+}
+
+model ITPracticalSubmission {
+  id              String          @id @default(uuid())
+  assessmentId    String          @map("assessment_id")
+  assessment      ITPracticalAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentId       String          @map("student_id")
+  student         User            @relation("ITPracticalStudent", fields: [studentId], references: [id])
+  status          SubmissionStatus @default(pending)
+  fileUrl         String?         @map("file_url")
+  fileName        String?         @map("file_name")
+  repoUrl         String?         @map("repo_url") // Git repository link
+  codeSubmission  String?         @map("code_submission") // Direct code submission
+  reportText      String?         @map("report_text")
+  submittedAt     DateTime?       @map("submitted_at")
+  evaluatedAt     DateTime?       @map("evaluated_at")
+  evaluatedBy     String?         @map("evaluated_by")
+  marks           Float?
+  feedback        String?
+  rubricScores    Json?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt      @map("updated_at")
+
+  @@unique([assessmentId, studentId])
+  @@map("it_practical_submissions")
+}
+
+
+
+

@@ -60,6 +60,7 @@ export default function BranchesPage() {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          aria-label="Branch name"
           placeholder="Branch name (e.g., Mechanical)"
           required
           minLength={2}
@@ -75,7 +76,7 @@ export default function BranchesPage() {
         )}
       </form>
 
-      <div className="table-container" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div tabIndex={0} aria-label="Branches Table" className="table-container" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <table style={tableStyle}>
           <thead>
             <tr>
@@ -115,16 +116,16 @@ export default function BranchesPage() {
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px',
+  padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', minHeight: '40px', boxSizing: 'border-box',
 };
 const primaryBtn: React.CSSProperties = {
-  padding: '10px 20px', background: '#1a73e8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer',
+  padding: '10px 20px', minHeight: '40px', background: '#1a73e8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer',
 };
 const secondaryBtn: React.CSSProperties = {
-  padding: '10px 20px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '6px', cursor: 'pointer',
+  padding: '10px 20px', minHeight: '40px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '6px', cursor: 'pointer',
 };
 const smallBtn: React.CSSProperties = {
-  padding: '6px 12px', background: '#dbeafe', color: '#1e40af', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+  padding: '8px 12px', minHeight: '40px', display: 'inline-flex', alignItems: 'center', background: '#dbeafe', color: '#1e40af', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
 };
 const tableStyle: React.CSSProperties = {
   width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '10px', overflow: 'hidden',

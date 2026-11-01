@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 
 // For multer uploads, body fields are strings (multipart/form-data)
 export const uploadResourceSchema = z.object({

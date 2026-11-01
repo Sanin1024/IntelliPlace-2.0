@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { questionApi } from '../../api/question';
 import { publicApi } from '../../api/admin';
 import { testApi } from '../../api/test';
 
 export default function MockTestBuilderPage() {
+  const [searchParams] = useSearchParams();
   const [tests, setTests] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [batches, setBatches] = useState<any[]>([]);
+  const [topics, setTopics] = useState<any[]>([]);
   const [showBuilder, setShowBuilder] = useState(false);
   const [viewingResults, setViewingResults] = useState<any>(null);
 
@@ -16,6 +19,11 @@ export default function MockTestBuilderPage() {
   const [durationMins, setDurationMins] = useState(30);
   const [batchId, setBatchId] = useState('');
   const [maxAttempts, setMaxAttempts] = useState(1);
+  const [negativeMarks, setNegativeMarks] = useState(0);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleOptions, setShuffleOptions] = useState(false);
+  const [showResults, setShowResults] = useState('after_submit');
+  const [warnOnTabSwitch, setWarnOnTabSwitch] = useState(true);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [filterTopic, setFilterTopic] = useState('');
 
@@ -26,7 +34,7 @@ export default function MockTestBuilderPage() {
   const loadTests = async () => {
     try {
       const data = await testApi.getAvailableTests();
-      setTests(data);
+      setTests(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load tests');
     } finally {
@@ -36,14 +44,33 @@ export default function MockTestBuilderPage() {
 
   useEffect(() => {
     publicApi.getBatches().then(setBatches).catch(() => setBatches([]));
+    publicApi.getTopics().then(setTopics).catch(() => setTopics([]));
     loadTests();
   }, []);
+
+  const aptitudeTopics = topics.filter((t: any) => t.type === 'aptitude');
+
+  const handleViewResults = async (testId: string) => {
+    try {
+      const data = await testApi.getTestResults(testId);
+      setViewingResults(data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to load results');
+    }
+  };
+
+  useEffect(() => {
+    const targetTestId = searchParams.get('viewResults') || searchParams.get('testId');
+    if (targetTestId) {
+      handleViewResults(targetTestId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (showBuilder) {
       const params: any = filterTopic ? { topicId: filterTopic } : {};
       questionApi.getAll(params)
-        .then(res => setQuestions(res.data))
+        .then(res => setQuestions(Array.isArray(res.data) ? res.data : []))
         .catch(() => setQuestions([]));
     }
   }, [showBuilder, filterTopic]);
@@ -71,6 +98,11 @@ export default function MockTestBuilderPage() {
         durationMins: Number(durationMins),
         batchId: batchId ? parseInt(batchId) : null,
         maxAttempts: Number(maxAttempts),
+        negativeMarks: Number(negativeMarks),
+        shuffleQuestions,
+        shuffleOptions,
+        showResults,
+        securityConfig: { warnOnTabSwitch, maxLoggedEvents: 50 },
         questionIds: selectedQuestions,
       });
       setSuccess(`Test "${title}" created with ${selectedQuestions.length} questions`);
@@ -92,12 +124,31 @@ export default function MockTestBuilderPage() {
     }
   };
 
-  const handleViewResults = async (testId: string) => {
+  const handleRecalculate = async (testId: string) => {
     try {
-      const data = await testApi.getTestResults(testId);
-      setViewingResults(data);
+      const res = await testApi.recalculateTestResults(testId);
+      setSuccess(`Recalculated ${res.recalculated} attempts successfully`);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load results');
+      setError(err.response?.data?.error || 'Failed to recalculate results');
+    }
+  };
+
+  const handlePublishResults = async (testId: string) => {
+    try {
+      await testApi.publishResults(testId);
+      setSuccess('Results published to students');
+      loadTests();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to publish results');
+    }
+  };
+
+  const handleToggleActive = async (testId: string, currentActive: boolean) => {
+    try {
+      await testApi.updateTest(testId, { isActive: !currentActive });
+      loadTests();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update test status');
     }
   };
 
@@ -186,6 +237,33 @@ export default function MockTestBuilderPage() {
                 <option value={3}>3</option>
               </select>
             </div>
+            <div>
+              <label style={lbl}>Negative Marks (per wrong answer)</label>
+              <input type="number" step="0.25" min={0} max={5} value={negativeMarks} onChange={e => setNegativeMarks(Number(e.target.value))} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>Results Visibility</label>
+              <select value={showResults} onChange={e => setShowResults(e.target.value)} style={inp}>
+                <option value="after_submit">Immediately After Submit</option>
+                <option value="after_deadline">After Test Window Closes</option>
+                <option value="manual">Manual Publish by Trainer</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '20px', marginTop: '14px', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} />
+              Shuffle Questions per Attempt
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={shuffleOptions} onChange={e => setShuffleOptions(e.target.checked)} />
+              Shuffle Options per Question
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={warnOnTabSwitch} onChange={e => setWarnOnTabSwitch(e.target.checked)} />
+              Warn on Tab Switch / Blur
+            </label>
           </div>
 
           <div style={{ marginTop: '12px' }}>
@@ -199,9 +277,9 @@ export default function MockTestBuilderPage() {
               <h4 style={{ margin: 0 }}>Select Questions ({selectedQuestions.length} selected)</h4>
               <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
                 <option value="">All topics</option>
-                <option value="1">Quantitative Aptitude</option>
-                <option value="2">Logical Reasoning</option>
-                <option value="3">Verbal Ability</option>
+                {aptitudeTopics.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
               </select>
             </div>
 
@@ -245,8 +323,32 @@ export default function MockTestBuilderPage() {
                   {t._count?.attempts || 0} total attempts
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    background: t.isActive !== false ? '#dcfce7' : '#f1f5f9',
+                    color: t.isActive !== false ? '#15803d' : '#64748b',
+                  }}
+                >
+                  {t.isActive !== false ? 'Active' : 'Inactive'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(t.id, t.isActive !== false)}
+                  style={{ ...btnSmall, background: '#f1f5f9', color: '#475569' }}
+                >
+                  {t.isActive !== false ? 'Deactivate' : 'Activate'}
+                </button>
                 <button onClick={() => handleViewResults(t.id)} style={btnSmall}>📊 Results</button>
+                <button onClick={() => window.location.href = `/trainer/tests/${t.id}/activity`} style={{ ...btnSmall, background: '#fef3c7', color: '#92400e' }}>👁 Activity</button>
+                <button onClick={() => handleRecalculate(t.id)} style={{ ...btnSmall, background: '#f1f5f9', color: '#334155' }}>🔄 Recalc</button>
+                {t.showResults === 'manual' && !t.resultsPublishedAt && (
+                  <button onClick={() => handlePublishResults(t.id)} style={{ ...btnSmall, background: '#dcfce7', color: '#166534' }}>📢 Publish</button>
+                )}
                 <button onClick={() => handleDelete(t.id)} style={{...btnSmall, background: '#fee2e2', color: '#dc2626'}}>🗑</button>
               </div>
             </div>

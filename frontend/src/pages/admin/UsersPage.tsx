@@ -1,186 +1,202 @@
 import { useEffect, useState } from 'react';
-import { userApi } from '../../api/admin';
-import type { AdminUser } from '../../types';
+import { userApi, publicApi } from '../../api/admin';
+import Pagination from '../../components/Pagination';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import EmptyState from '../../components/EmptyState';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'trainer' });
-  const [filterRole, setFilterRole] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Filters state
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({ role: '', batch: '', department: '', section: '' });
+  
+  // Dropdown options state
+  const [batches, setBatches] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
 
-  const load = async () => {
+  // Fetch dropdown options on mount
+  useEffect(() => {
+    publicApi.getBranches().then(setBranches).catch(() => {});
+    publicApi.getBatches().then(setBatches).catch(() => {});
+  }, []);
+
+  // Fetch users when filters, search, or page changes
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadUsers();
+    }, 300); // Debounce search input
+
+    return () => clearTimeout(timeout);
+  }, [search, filters, meta.page]);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
     try {
-      const data = filterRole ? await userApi.getAll({ role: filterRole }) : await userApi.getAll();
-      setUsers(data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load users');
+      const res = await userApi.getAll({
+        search,
+        role: filters.role,
+        batch: filters.batch,
+        department: filters.department,
+        section: filters.section,
+        page: meta.page,
+        limit: 10,
+      });
+      setUsers(res.data);
+      setMeta(res.meta);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, [filterRole]);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    try {
-      await userApi.create(formData);
-      setSuccess(`User ${formData.email} created successfully`);
-      setFormData({ name: '', email: '', password: '', role: 'trainer' });
-      setShowCreateForm(false);
-      load();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create user');
-    }
+  const handleFilterChange = (key: 'role' | 'batch' | 'department' | 'section', value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setMeta(m => ({ ...m, page: 1 })); // Reset to page 1 on filter change
   };
 
-  const handleToggle = async (user: AdminUser) => {
-    try {
-      await userApi.toggleStatus(user.id, !user.isActive);
-      load();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to toggle status');
-    }
+  const clearFilters = () => {
+    setSearch('');
+    setFilters({ role: '', batch: '', department: '', section: '' });
+    setMeta(m => ({ ...m, page: 1 }));
   };
-
-  if (isLoading) return <p>Loading...</p>;
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0 }}>Manage Users</h1>
-        <button onClick={() => setShowCreateForm(!showCreateForm)} style={primaryBtn}>
-          + Create User (PO/Trainer/Admin)
-        </button>
-      </div>
+      <h1>Manage Users</h1>
+      <p style={{ color: '#64748b', marginBottom: '24px' }}>Filter and manage student, staff, and admin accounts.</p>
 
-      {error && <div style={{ ...alert, background: '#fee', color: '#c00' }}>{error}</div>}
-      {success && <div style={{ ...alert, background: '#f0fdf4', color: '#166534' }}>{success}</div>}
-
-      {showCreateForm && (
-        <form onSubmit={handleCreate} style={{ ...card, marginBottom: '24px' }}>
-          <h3>Create New Staff User</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={label}>Name</label>
-              <input
-                type="text" value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required minLength={2} style={input} placeholder="Full name"
-              />
-            </div>
-            <div>
-              <label style={label}>Email</label>
-              <input
-                type="email" value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required style={input} placeholder="user@intelliplace.edu"
-              />
-            </div>
-            <div>
-              <label style={label}>Password (min 8 chars)</label>
-              <input
-                type="password" value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required minLength={8} style={input}
-              />
-            </div>
-            <div>
-              <label style={label}>Role</label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={input}
-              >
-                <option value="trainer">Trainer</option>
-                <option value="po">Placement Officer</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" style={{ ...primaryBtn, marginTop: '16px' }}>Create</button>
-        </form>
-      )}
-
-      <div style={{ marginBottom: '16px' }}>
-        <label style={label}>Filter by role: </label>
-        <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} style={input}>
-          <option value="">All roles</option>
+      {/* Filter Bar */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="🔍 Search name or email..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setMeta(m => ({...m, page: 1})); }}
+          style={{ ...inp, flex: 1, minWidth: '200px' }}
+        />
+        
+        <select value={filters.role} onChange={(e) => handleFilterChange('role', e.target.value)} style={inp}>
+          <option value="">All Roles</option>
           <option value="student">Student</option>
-          <option value="po">Placement Officer</option>
-          <option value="trainer">Trainer</option>
+          <option value="trainer">Tutor</option>
+          <option value="po">Placement & Training Officer</option>
           <option value="admin">Admin</option>
         </select>
+
+        <select value={filters.department} onChange={(e) => handleFilterChange('department', e.target.value)} style={inp}>
+          <option value="">All Departments</option>
+          {branches.map(b => <option key={b.id} value={b.code}>{b.code} - {b.name}</option>)}
+        </select>
+
+        <select value={filters.batch} onChange={(e) => handleFilterChange('batch', e.target.value)} style={inp}>
+          <option value="">All Batches</option>
+          {batches.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+        </select>
+
+        <select 
+          value={filters.section} 
+          onChange={(e) => handleFilterChange('section', e.target.value)} 
+          style={inp}
+        >
+          <option value="">All Sections</option>
+          <option value="CSA">CSA</option>
+          <option value="CSB">CSB</option>
+          <option value="NOT_APPLICABLE">Not Applicable</option>
+        </select>
+
+        <button onClick={clearFilters} style={clearBtn}>Clear</button>
       </div>
 
-      <div className="table-container" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <table style={table}>
-          <thead>
-            <tr>
-              <th style={th}>Name</th>
-              <th style={th}>Email</th>
-              <th style={th}>Role</th>
-              <th style={th}>Status</th>
-              <th style={th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td style={td}>{u.name}</td>
-                <td style={td}>{u.email}</td>
-                <td style={td}>
-                  <span style={roleBadge(u.role)}>{u.role}</span>
-                </td>
-                <td style={td}>
-                  <span style={{ color: u.isActive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                    {u.isActive ? 'Active' : 'Disabled'}
-                  </span>
-                </td>
-                <td style={td}>
-                  {u.role !== 'student' && (
-                    <button
-                      onClick={() => handleToggle(u)}
-                      style={{
-                        ...smallBtn,
-                        background: u.isActive ? '#fee2e2' : '#f0fdf4',
-                        color: u.isActive ? '#dc2626' : '#16a34a',
-                      }}
-                    >
-                      {u.isActive ? 'Disable' : 'Enable'}
-                    </button>
-                  )}
-                </td>
+      {/* Results Count */}
+      <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px' }}>
+        Showing {users.length} of {meta.total} matching users
+      </p>
+
+      {/* Table */}
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : users.length === 0 ? (
+        <EmptyState icon="🔍" title="No Users Found" description="No users match the selected filter criteria." />
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={table}>
+            <thead>
+              <tr>
+                <th style={th}>Name</th>
+                <th style={th}>Email</th>
+                <th style={th}>Role</th>
+                <th style={th}>Department</th>
+                <th style={th}>Batch</th>
+                <th style={th}>Section</th>
+                <th style={th}>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td style={td}>
+                    <strong>{u.name}</strong>
+                    {u.studentProfile?.ktuid && (
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: '#6366f1', fontWeight: 600, background: '#eef2ff', padding: '2px 6px', borderRadius: '4px' }}>
+                        {u.studentProfile.ktuid}
+                      </span>
+                    )}
+                  </td>
+                  <td style={td}>{u.email}</td>
+                  <td style={td}>
+                    <span style={roleBadge(u.role)}>
+                      {u.role === 'po' ? 'PT Officer' : u.role === 'trainer' ? 'Tutor' : u.role}
+                    </span>
+                  </td>
+                  <td style={td}>{u.studentProfile?.branch?.code || '—'}</td>
+                  <td style={td}>{u.studentProfile?.batch?.name || '—'}</td>
+                  <td style={td}>{u.studentProfile?.section || '—'}</td>
+                  <td style={td}>
+                    <span style={{ color: u.isActive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                      {u.isActive ? 'Active' : 'Disabled'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Pagination 
+        page={meta.page} 
+        totalPages={meta.totalPages} 
+        onPageChange={(p) => setMeta(m => ({...m, page: p}))} 
+      />
     </div>
   );
 }
 
+// Styles
+const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '14px', background: 'var(--color-surface)', color: 'var(--color-text)' };
+const clearBtn: React.CSSProperties = { padding: '10px 16px', background: 'var(--color-surface-hover)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600 };
+const table: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' };
+const th: React.CSSProperties = { textAlign: 'left', padding: '12px 16px', background: 'var(--color-surface-hover)', borderBottom: '2px solid var(--color-border)', fontSize: '13px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' };
+const td: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid var(--color-border)', fontSize: '14px', whiteSpace: 'nowrap', color: 'var(--color-text)' };
+
 function roleBadge(role: string): React.CSSProperties {
   const colors: Record<string, string> = {
-    admin: '#7c3aed', po: '#0891b2', trainer: '#d97706', student: '#2563eb',
+    admin: 'var(--color-role-admin)', 
+    po: 'var(--color-role-po)',      // PT Officer color
+    trainer: 'var(--color-role-trainer)', // Tutor color
+    student: 'var(--color-role-student)',
   };
+  const color = colors[role] || 'var(--color-text-muted)';
   return {
-    background: `${colors[role]}20`, color: colors[role],
-    padding: '2px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 600,
+    background: `color-mix(in srgb, ${color} 15%, transparent)`, 
+    color,
+    padding: '2px 10px', 
+    borderRadius: '10px', 
+    fontSize: '12px', 
+    fontWeight: 600,
   };
 }
-
-const input: React.CSSProperties = { padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', marginTop: '4px' };
-const label: React.CSSProperties = { fontSize: '13px', fontWeight: 600, color: '#475569' };
-const primaryBtn: React.CSSProperties = { padding: '10px 20px', background: '#1a73e8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' };
-const smallBtn: React.CSSProperties = { padding: '6px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 };
-const table: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '10px', overflow: 'hidden' };
-const th: React.CSSProperties = { textAlign: 'left', padding: '12px 16px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: '13px', color: '#64748b' };
-const td: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', fontSize: '14px' };
-const alert: React.CSSProperties = { padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' };
-const card: React.CSSProperties = { background: '#fff', padding: '20px', borderRadius: '10px', border: '1px solid #e2e8f0' };

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { resourceApi } from '../../api/resource';
 import { publicApi } from '../../api/admin';
+import { trainingApi } from '../../api/training';
 import type { Resource } from '../../api/resource';
 
 export default function UploadResourcePage() {
@@ -12,6 +13,7 @@ export default function UploadResourcePage() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,31 +99,59 @@ export default function UploadResourcePage() {
         <h3>Upload New Resource</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label style={lbl}>Title</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required minLength={3} style={inp} placeholder="e.g., Quantitative Aptitude - Complete Notes" />
+            <label htmlFor="resource-title" style={lbl}>Title</label>
+            <input
+              id="resource-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={async () => {
+                if (title.trim().length >= 3) {
+                  try {
+                    const check = await trainingApi.checkDuplicate({ title: title.trim() });
+                    if (check?.isDuplicate) {
+                      setDuplicateWarning(`Potential duplicate detected: "${check.duplicateOf.title}" (v${check.duplicateOf.version}). Ensure you are not uploading redundant material.`);
+                    } else {
+                      setDuplicateWarning(null);
+                    }
+                  } catch {
+                    // non-blocking
+                  }
+                }
+              }}
+              required
+              minLength={3}
+              style={inp}
+              placeholder="e.g., Quantitative Aptitude - Complete Notes"
+            />
+            {duplicateWarning && (
+              <div style={{ marginTop: '4px', fontSize: '12px', color: '#b45309', background: '#fffbeb', padding: '6px 10px', borderRadius: '4px', border: '1px solid #fef3c7' }}>
+                ⚠️ {duplicateWarning}
+              </div>
+            )}
           </div>
           <div>
-            <label style={lbl}>Topic (optional)</label>
-            <select value={topicId} onChange={e => setTopicId(e.target.value)} style={inp}>
+            <label htmlFor="resource-topic" style={lbl}>Topic (optional)</label>
+            <select id="resource-topic" aria-label="Topic (optional)" value={topicId} onChange={e => setTopicId(e.target.value)} style={inp}>
               <option value="">No specific topic</option>
               {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
         </div>
         <div style={{ marginTop: '12px' }}>
-          <label style={lbl}>Description (optional)</label>
-          <input type="text" value={description} onChange={e => setDescription(e.target.value)} style={inp} placeholder="Brief description of the content" />
+          <label htmlFor="resource-desc" style={lbl}>Description (optional)</label>
+          <input id="resource-desc" type="text" value={description} onChange={e => setDescription(e.target.value)} style={inp} placeholder="Brief description of the content" />
         </div>
         <div style={{ marginTop: '12px' }}>
-          <label style={lbl}>File (PDF, DOC, PPT, MP4, images — max 100MB)</label>
-          <input ref={fileInputRef} type="file" onChange={e => setFile(e.target.files?.[0] || null)} required style={{ ...inp, padding: '8px' }} />
+          <label htmlFor="resource-file" style={lbl}>File (PDF, DOC, PPT, MP4, images — max 100MB)</label>
+          <input id="resource-file" aria-label="File upload" ref={fileInputRef} type="file" onChange={e => setFile(e.target.files?.[0] || null)} required style={{ ...inp, padding: '8px' }} />
         </div>
         {file && (
           <p style={{ fontSize: '13px', color: '#64748b', marginTop: '8px' }}>
             Selected: {getFileIcon(file.name)} {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
           </p>
         )}
-        <button type="submit" disabled={isUploading} style={{ ...btnPrimary, marginTop: '16px' }}>
+        <button type="submit" disabled={isUploading} style={{ ...btnPrimary, marginTop: '16px', minHeight: '40px' }}>
           {isUploading ? 'Uploading...' : '⬆️ Upload Resource'}
         </button>
       </form>

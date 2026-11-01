@@ -3,7 +3,11 @@ import { z } from 'zod';
 export const createCompanySchema = z.object({
   body: z.object({
     name: z.string().min(2, 'Company name must be at least 2 characters').max(100),
-    description: z.string().optional(),
+    website: z.string().url().max(300).optional().or(z.literal('')),
+    hqLocation: z.string().max(200).optional(),
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    contactPhone: z.string().max(30).optional(),
+    description: z.string().max(3000).optional(),
     jobRole: z.string().min(2, 'Job role is required').max(200),
     package: z.number().positive('Package must be positive').optional(),
     eligibilityCgpa: z.number().min(0).max(10, 'CGPA must be 0-10'),
@@ -18,7 +22,11 @@ export const updateCompanySchema = z.object({
   params: z.object({ id: z.string().min(1) }),
   body: z.object({
     name: z.string().min(2).max(100).optional(),
-    description: z.string().optional(),
+    website: z.string().url().max(300).optional().or(z.literal('')),
+    hqLocation: z.string().max(200).optional(),
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    contactPhone: z.string().max(30).optional(),
+    description: z.string().max(3000).optional(),
     jobRole: z.string().min(2).max(200).optional(),
     package: z.number().positive().optional(),
     eligibilityCgpa: z.number().min(0).max(10).optional(),

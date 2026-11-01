@@ -28,7 +28,8 @@ const storage = multer.diskStorage({
 
 const ALLOWED_EXTENSIONS = [
   '.pdf', '.doc', '.docx', '.ppt', '.pptx',
-  '.txt', '.md',
+  '.txt', '.md', '.mp4', '.png', '.jpg', '.jpeg',
+  '.zip', '.step', '.stp', '.stl', '.iges', '.igs', '.dwg', '.dxf',
 ];
 
 const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
@@ -44,7 +45,7 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
+    fileSize: 25 * 1024 * 1024, // 25MB max (Ch 216, 220)
     files: 1,
   },
 });

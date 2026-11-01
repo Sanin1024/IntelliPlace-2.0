@@ -355,7 +355,7 @@ export class LocalProcessRunner implements CodeRunner {
       const startTime = Date.now();
 
       const binary = language === 'python' ? pythonBinary : nodeBinary;
-      let args: string[] = [];
+      let args: string[];
 
       if (language === 'python') {
         // -I: isolated mode (ignore Python environment variables and user site-packages)

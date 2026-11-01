@@ -5,6 +5,10 @@ import { generateDemoPdfs } from './generateDemoPdfs.js';
 import { calculateStudentReadiness } from './services/readiness.js';
 
 async function seedDemo() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Refusing to seed demo data when NODE_ENV === "production"');
+    process.exit(1);
+  }
   console.log('================================================================');
   console.log('🌟 Seeding IntelliPlace Realistic Demo Content & Activity');
   console.log('================================================================\n');
@@ -325,6 +329,7 @@ async function seedDemo() {
           availableFrom: m.availableFrom,
           availableUntil: m.availableUntil,
           maxAttempts: m.maxAttempts,
+          status: 'published',
           createdBy: m.createdBy,
           questions: {
             create: m.questionIds.map((qid) => ({ questionId: qid, marks: 1 })),
@@ -394,9 +399,9 @@ async function seedDemo() {
   ];
 
   for (const an of announcementDefs) {
-    let notif = await prisma.notification.findFirst({ where: { title: an.title } });
-    if (!notif) {
-      notif = await prisma.notification.create({
+    const existing = await prisma.notification.findFirst({ where: { title: an.title } });
+    if (!existing) {
+      await prisma.notification.create({
         data: {
           title: an.title,
           message: an.message,

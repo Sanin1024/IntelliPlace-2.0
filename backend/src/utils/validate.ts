@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+﻿import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
 /**
@@ -24,6 +24,23 @@ export const validate =
             message: issue.message,
           })),
         });
+      }
+
+      if (result.data) {
+        const parsed = result.data as any;
+        if (parsed.body !== undefined) {
+          req.body = parsed.body;
+        }
+        if (parsed.query !== undefined) {
+          try {
+            req.query = parsed.query;
+          } catch {}
+        }
+        if (parsed.params !== undefined) {
+          try {
+            req.params = parsed.params;
+          } catch {}
+        }
       }
 
       next();

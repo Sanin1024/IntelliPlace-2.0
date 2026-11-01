@@ -1,0 +1,94 @@
+{
+  "Student Profile": [
+    {
+      "id": "label",
+      "impact": "critical",
+      "description": "Ensure every form element has a label",
+      "count": 1
+    },
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 3
+    }
+  ],
+  "Student Resources": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 2
+    }
+  ],
+  "Coding Problems List": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 2
+    }
+  ],
+  "Student Practice Page": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 1
+    }
+  ],
+  "PO Dashboard": [
+    {
+      "id": "scrollable-region-focusable",
+      "impact": "serious",
+      "description": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+      "count": 1
+    }
+  ],
+  "PO Students Page": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 9
+    }
+  ],
+  "Trainer Question Bank": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 1
+    }
+  ],
+  "Trainer Upload Resources": [
+    {
+      "id": "label",
+      "impact": "critical",
+      "description": "Ensure every form element has a label",
+      "count": 1
+    },
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 1
+    }
+  ],
+  "Admin Batches Page": [
+    {
+      "id": "label",
+      "impact": "critical",
+      "description": "Ensure every form element has a label",
+      "count": 1
+    }
+  ],
+  "Admin Users Page": [
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "description": "Ensure select element has an accessible name",
+      "count": 1
+    }
+  ]
+}

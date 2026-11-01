@@ -147,7 +147,7 @@ export default function TrainerDashboard() {
               </Link>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div tabIndex={0} aria-label="Recent Mock Tests Table" style={{ overflowX: 'auto' }}>
               <table style={tableStyle}>
                 <thead>
                   <tr style={tableHeadRow}>
@@ -169,17 +169,22 @@ export default function TrainerDashboard() {
                       <td style={tdStyle}>{t.attemptsCount}</td>
                       <td style={tdStyle}>{t.submittedCount}</td>
                       <td style={tdStyle}>
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            color: t.avgPercentage >= 70 ? '#059669' : t.avgPercentage >= 40 ? '#d97706' : '#dc2626',
-                          }}
-                        >
-                          {t.submittedCount > 0 ? `${t.avgPercentage}%` : 'N/A'}
-                        </span>
+                        {(() => {
+                          const pct = t.avgPercentage ?? (t as any).averagePercentage ?? 0;
+                          return (
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: pct >= 70 ? '#059669' : pct >= 40 ? '#d97706' : '#dc2626',
+                              }}
+                            >
+                              {t.submittedCount > 0 ? `${pct}%` : 'N/A'}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td style={tdStyle}>
-                        <Link to="/trainer/tests" style={tableActionLink}>
+                        <Link to={`/trainer/tests?viewResults=${t.id}`} style={tableActionLink}>
                           View Results
                         </Link>
                       </td>
@@ -414,6 +419,9 @@ const viewAllLink: React.CSSProperties = {
   color: '#2563eb',
   fontWeight: 600,
   textDecoration: 'none',
+  minHeight: '40px',
+  display: 'inline-flex',
+  alignItems: 'center',
 };
 
 const tableStyle: React.CSSProperties = {
@@ -449,6 +457,9 @@ const tableActionLink: React.CSSProperties = {
   color: '#2563eb',
   fontWeight: 600,
   textDecoration: 'none',
+  minHeight: '40px',
+  display: 'inline-flex',
+  alignItems: 'center',
 };
 
 const weakTopicItemStyle: React.CSSProperties = {
@@ -480,6 +491,12 @@ const smallActionLink: React.CSSProperties = {
   fontWeight: 600,
   color: '#2563eb',
   textDecoration: 'none',
+  minHeight: '40px',
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '6px 10px',
+  background: '#eff6ff',
+  borderRadius: '4px',
 };
 
 const emptyBoxMedium: React.CSSProperties = {

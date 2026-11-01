@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { toast } from '../context/ToastContext';
 
+const getBaseUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
+  const trimmed = envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+  baseURL: getBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
+  timeout: 15000, // Challenge 206: Enforce client-side timeout of 15 seconds
 });
 
 // Attach token to every request
@@ -25,7 +32,9 @@ api.interceptors.response.use(
     if (!error.response || error.code === 'ERR_NETWORK') {
       const netMsg = 'Network failure: Unable to reach the server. Please check your connection.';
       toast.error(netMsg);
-      return Promise.reject(new Error(netMsg));
+      const netErr = new Error(netMsg);
+      (netErr as any).isNetworkError = true;
+      return Promise.reject(netErr);
     }
 
     const status = error.response.status;
@@ -47,6 +56,12 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+
+    // Attach standardized properties for uniform error handling
+    (error as any).message = errorMsg;
+    (error as any).status = status;
+    (error as any).requestId = error.response?.data?.requestId;
+    (error as any).details = error.response?.data?.details;
 
     return Promise.reject(error);
   }

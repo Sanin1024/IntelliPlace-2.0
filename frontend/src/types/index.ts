@@ -44,6 +44,12 @@ export interface AdminUser {
   role: Role;
   isActive: boolean;
   createdAt: string;
+  studentProfile?: {
+    ktuid?: string | null;
+    branch?: { name: string; code?: string };
+    batch?: { name: string };
+    section?: string | null;
+  } | null;
 }
 
 export interface ApiResponse<T> {

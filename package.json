@@ -18,11 +18,22 @@
     "validate:content": "npm run validate:content --workspace backend",
     "db:counts": "npm run db:counts --workspace backend",
     "e2e": "npm run e2e --workspace backend",
-    "smoke": "npm run smoke --workspace frontend"
+    "smoke": "npm run smoke --workspace frontend",
+    "test:security": "npm run test:security --workspace backend",
+    "test:auth": "npm run test:auth --workspace backend",
+    "test:secrets": "npm run test:secrets --workspace backend",
+    "scan:secrets": "npm run scan:secrets --workspace backend",
+    "lint": "eslint backend/src frontend/src",
+    "typecheck": "tsc -p backend/tsconfig.json --noEmit && tsc -p frontend/tsconfig.json --noEmit"
   },
   "allowScripts": {
     "@prisma/engines@7.10.1": true,
     "esbuild": true,
     "prisma@7.10.1": true
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "typescript-eslint": "^8.72.1"
   }
 }

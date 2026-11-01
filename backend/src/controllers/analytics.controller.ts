@@ -3,6 +3,19 @@ import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import { ensureStudentOwnership } from '../utils/ownership.js';
 import { calculateStudentReadiness } from '../services/readiness.js';
+import {
+  getPlacementStats,
+  getBranchWiseStats,
+  getCompanyWiseStats,
+  getSalaryAnalytics,
+  getAssessmentAnalytics,
+  AnalyticsFilters,
+} from '../services/analytics.service.js';
+import {
+  generatePlacementReportCsv,
+  generatePlacementReportExcel,
+  generatePlacementReportPdf,
+} from '../services/report.service.js';
 
 // ============================================================
 // HELPER: Get topic-wise accuracy for a student
@@ -386,6 +399,100 @@ export const getBatchAnalytics = async (req: Request, res: Response, next: NextF
     );
 
     res.json({ success: true, data: studentStats });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ============================================================
+// Challenges 336–350: Centralized PO & Admin Reporting & Analytics
+// ============================================================
+
+const parseAnalyticsFilters = (req: Request): AnalyticsFilters => ({
+  batchId: req.query.batchId ? parseInt(req.query.batchId as string, 10) : undefined,
+  branchId: req.query.branchId ? parseInt(req.query.branchId as string, 10) : undefined,
+  companyId: req.query.companyId as string | undefined,
+  graduatingBatch: req.query.graduatingBatch as string | undefined,
+  entryType: req.query.entryType as string | undefined,
+});
+
+export const getStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await getPlacementStats(parseAnalyticsFilters(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getBranchStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await getBranchWiseStats(parseAnalyticsFilters(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getCompanyStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await getCompanyWiseStats(parseAnalyticsFilters(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSalaryStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await getSalaryAnalytics(parseAnalyticsFilters(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAssessmentStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await getAssessmentAnalytics(parseAnalyticsFilters(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Exports (Challenges 345, 346)
+export const exportCsv = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const csv = await generatePlacementReportCsv(parseAnalyticsFilters(req));
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="placement_report.csv"');
+    res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const exportExcel = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const buffer = await generatePlacementReportExcel(parseAnalyticsFilters(req));
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="placement_report.xlsx"');
+    res.send(buffer);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const exportPdf = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const buffer = await generatePlacementReportPdf(parseAnalyticsFilters(req));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="placement_report.pdf"');
+    res.send(buffer);
   } catch (err) {
     next(err);
   }

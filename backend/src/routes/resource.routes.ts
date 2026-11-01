@@ -17,16 +17,16 @@ router.get('/', getAllResources);
 // Download resource file stream — all authenticated users
 router.get('/:id/download', downloadResource);
 
-// Upload — trainer only, uses multer middleware
+// Upload — trainer or admin, uses multer middleware
 router.post(
   '/',
-  requireRole('trainer'),
+  requireRole('trainer', 'admin'),
   upload.single('file'), // field name must be "file"
   validate(uploadResourceSchema),
   uploadResource,
 );
 
 // Delete — trainer (own uploads) or admin
-router.delete('/:id', validate(resourceIdSchema), deleteResource);
+router.delete('/:id', requireRole('trainer', 'admin'), validate(resourceIdSchema), deleteResource);
 
 export default router;

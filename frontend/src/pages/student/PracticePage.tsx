@@ -115,8 +115,8 @@ export default function PracticePage() {
         {error && <div style={errStyle}>{error}</div>}
 
         <div style={{ marginTop: '20px', marginBottom: '24px' }}>
-          <label style={lbl}>Difficulty filter (optional): </label>
-          <select value={difficulty} onChange={e => setDifficulty(e.target.value)} style={{...inp, width: '200px'}}>
+          <label htmlFor="practice-difficulty" style={lbl}>Difficulty filter (optional): </label>
+          <select id="practice-difficulty" aria-label="Difficulty filter" value={difficulty} onChange={e => setDifficulty(e.target.value)} style={{...inp, width: '200px'}}>
             <option value="">All difficulties</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>

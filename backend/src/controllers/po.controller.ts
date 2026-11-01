@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import { calculateStudentReadiness } from '../services/readiness.js';
+import { audit } from '../services/audit.service.js';
 
 /**
  * GET /api/po/students
@@ -36,17 +37,44 @@ export const getAllStudents = async (req: Request, res: Response, next: NextFunc
         branch: { select: { id: true, name: true } },
         batch: { select: { id: true, name: true } },
       },
-      orderBy: { user: { name: 'asc' } },
+      orderBy: {
+        ktuid: 'asc',
+      },
     });
 
-    // Compute readiness + stats for each student
+    // Challenge 239: N+1 Elimination - Batch fetch attempts and coding submissions
+    const studentIds = profiles.map((p: any) => p.userId);
+
+    const allAttempts = studentIds.length > 0
+      ? await prisma.testAttempt.findMany({
+          where: { studentId: { in: studentIds }, status: 'submitted' },
+          select: { studentId: true, score: true, totalMarks: true, attemptType: true },
+        })
+      : [];
+
+    const attemptsByStudent = new Map<string, any[]>();
+    for (const a of allAttempts) {
+      const list = attemptsByStudent.get(a.studentId) || [];
+      list.push(a);
+      attemptsByStudent.set(a.studentId, list);
+    }
+
+    const codingCounts = studentIds.length > 0
+      ? await prisma.codingSubmission.groupBy({
+          by: ['studentId'],
+          _count: { id: true },
+          where: { studentId: { in: studentIds } },
+        })
+      : [];
+
+    const codingCountByStudent = new Map<string, number>(
+      codingCounts.map((c: any) => [c.studentId, c._count.id])
+    );
+
+    // Compute readiness + stats for each student using batched data
     const studentsWithStats = await Promise.all(
       profiles.map(async (profile: any) => {
-        const attempts = await prisma.testAttempt.findMany({
-          where: { studentId: profile.userId, status: 'submitted' },
-          select: { score: true, totalMarks: true, attemptType: true },
-        });
-
+        const attempts = attemptsByStudent.get(profile.userId) || [];
         const mockAttempts = attempts.filter((a: any) => a.attemptType === 'mock');
         const practiceAttempts = attempts.filter((a: any) => a.attemptType === 'practice');
 
@@ -59,13 +87,11 @@ export const getAllStudents = async (req: Request, res: Response, next: NextFunc
           : null;
 
         const readiness = await calculateStudentReadiness(profile.userId);
-
-        const codingSubmissions = await prisma.codingSubmission.count({
-          where: { studentId: profile.userId },
-        });
+        const codingSubmissions = codingCountByStudent.get(profile.userId) || 0;
 
         return {
           studentId: profile.userId,
+          ktuid: profile.ktuid,
           name: profile.user.name,
           email: profile.user.email,
           branch: profile.branch?.name,
@@ -222,6 +248,7 @@ export const updatePlacementStatus = async (req: Request, res: Response, next: N
 
     const profile = await prisma.studentProfile.findUnique({
       where: { userId: studentId },
+      include: { user: { select: { name: true } } },
     });
     if (!profile) throw ApiError.notFound('Student profile not found');
 
@@ -232,6 +259,15 @@ export const updatePlacementStatus = async (req: Request, res: Response, next: N
         user: { select: { id: true, name: true, email: true } },
       },
     });
+
+    await audit(
+      req.user!.id,
+      'student.placement_status_change',
+      'student_profile',
+      studentId,
+      'success',
+      { newStatus: placementStatus, studentName: profile.user?.name }
+    );
 
     res.json({
       success: true,

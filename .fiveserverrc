@@ -1,0 +1,7 @@
+{
+    "host": "localhost",
+    "port": 5173,
+    "root": "frontend/dist",
+    "open": "login",
+    "file": "index.html"
+}

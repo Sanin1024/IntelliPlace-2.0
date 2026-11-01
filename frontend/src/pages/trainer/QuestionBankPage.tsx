@@ -203,8 +203,8 @@ export default function QuestionBankPage() {
       )}
 
       <div style={{ marginBottom: '16px', marginTop: '20px' }}>
-        <label style={lbl}>Filter by topic: </label>
-        <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
+        <label htmlFor="filter-topic-select" style={lbl}>Filter by topic: </label>
+        <select id="filter-topic-select" aria-label="Filter by topic" value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={{...inp, width: '200px'}}>
           <option value="">All topics</option>
           {aptitudeTopics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>

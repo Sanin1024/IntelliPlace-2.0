@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 
@@ -109,24 +109,27 @@ export const submitAnswer = async (req: Request, res: Response, next: NextFuncti
     // Evaluate
     const isCorrect = question.correctOption === selectedOption;
 
-    // Save answer
-    await prisma.studentAnswer.create({
-      data: {
-        attemptId,
-        questionId,
-        selectedOption,
-        isCorrect,
-      },
-    });
+    // Save answer and update attempt score atomically
+    const { correctCount, totalAnswered } = await prisma.$transaction(async (tx) => {
+      await tx.studentAnswer.create({
+        data: {
+          attemptId,
+          questionId,
+          selectedOption,
+          isCorrect,
+        },
+      });
 
-    // Update attempt score
-    const answers = await prisma.studentAnswer.findMany({
-      where: { attemptId },
-    });
-    const correctCount = answers.filter((a) => a.isCorrect).length;
-    await prisma.testAttempt.update({
-      where: { id: attemptId },
-      data: { score: correctCount },
+      const answers = await tx.studentAnswer.findMany({
+        where: { attemptId },
+      });
+      const count = answers.filter((a) => a.isCorrect).length;
+      await tx.testAttempt.update({
+        where: { id: attemptId },
+        data: { score: count },
+      });
+
+      return { correctCount: count, totalAnswered: answers.length };
     });
 
     res.json({
@@ -136,7 +139,7 @@ export const submitAnswer = async (req: Request, res: Response, next: NextFuncti
         correctOption: question.correctOption,
         explanation: question.explanation,
         currentScore: correctCount,
-        totalAnswered: answers.length,
+        totalAnswered,
       },
     });
   } catch (err) {

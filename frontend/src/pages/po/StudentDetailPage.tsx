@@ -81,7 +81,7 @@ export default function StudentDetailPage() {
             </div>
 
             {profile.resumeUrl && (
-              <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ ...btnSmall, display: 'inline-block', marginTop: '16px', textDecoration: 'none' }}>
+              <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ ...btnSmall, display: 'inline-flex', alignItems: 'center', minHeight: '40px', marginTop: '16px', textDecoration: 'none' }}>
                 📄 View Resume
               </a>
             )}
@@ -91,6 +91,7 @@ export default function StudentDetailPage() {
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 4px 0' }}>Placement Status</p>
             <select
+              aria-label="Placement Status"
               value={profile.placementStatus}
               onChange={e => handleStatusChange(e.target.value)}
               style={{

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
+import { audit } from '../services/audit.service.js';
 
 /**
  * Helper: compute eligibility for a student against a company.
@@ -60,6 +61,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
       name, description, jobRole, package: pkg,
       eligibilityCgpa, driveDate, syllabusText,
       eligibleBranchIds, topicIds,
+      website, hqLocation, contactEmail, contactPhone,
     } = req.body;
 
     // Check duplicate name
@@ -87,6 +89,10 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
     const company = await prisma.company.create({
       data: {
         name,
+        website: website || null,
+        hqLocation: hqLocation || null,
+        contactEmail: contactEmail || null,
+        contactPhone: contactPhone || null,
         description: description || null,
         jobRole,
         package: pkg || null,
@@ -111,6 +117,15 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
       },
     });
 
+    await audit(
+      req.user!.id,
+      'company.create',
+      'company',
+      company.id,
+      'success',
+      { name, jobRole, driveDate }
+    );
+
     res.status(201).json({ success: true, data: company });
   } catch (err) {
     next(err);
@@ -124,8 +139,10 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
 export const getAllCompanies = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const isStudent = req.user!.role === 'student';
+    const includeDeleted = req.query.includeDeleted === 'true' && req.user!.role === 'admin';
 
     const companies = await prisma.company.findMany({
+      where: includeDeleted ? undefined : { deletedAt: null },
       include: {
         eligibleBranches: {
           include: { branch: { select: { id: true, name: true } } },
@@ -210,14 +227,21 @@ export const getCompanyById = async (req: Request, res: Response, next: NextFunc
     if (!company) throw ApiError.notFound('Company not found');
 
     let eligibility = null;
-    if (req.user!.role === 'student') {
+    const isStudent = req.user!.role === 'student';
+    if (isStudent) {
       const profile = await prisma.studentProfile.findUnique({
         where: { userId: req.user!.id },
       });
       eligibility = checkEligibility(company, profile);
     }
 
-    res.json({ success: true, data: { ...company, myEligibility: eligibility } });
+    const sanitizedCompany = {
+      ...company,
+      internalNotes: isStudent ? undefined : company.internalNotes,
+      myEligibility: eligibility,
+    };
+
+    res.json({ success: true, data: sanitizedCompany });
   } catch (err) {
     next(err);
   }
@@ -235,35 +259,46 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
     const existing = await prisma.company.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Company not found');
 
-    // Update branches if provided
-    if (eligibleBranchIds) {
-      await prisma.companyEligibleBranch.deleteMany({ where: { companyId: id } });
-      await prisma.companyEligibleBranch.createMany({
-        data: eligibleBranchIds.map((branchId: number) => ({ companyId: id, branchId })),
-      });
-    }
-
-    // Update topics if provided
-    if (topicIds) {
-      await prisma.companyTopic.deleteMany({ where: { companyId: id } });
-      if (topicIds.length > 0) {
-        await prisma.companyTopic.createMany({
-          data: topicIds.map((topicId: number) => ({ companyId: id, topicId })),
+    const company = await prisma.$transaction(async (tx) => {
+      // Update branches if provided
+      if (eligibleBranchIds) {
+        await tx.companyEligibleBranch.deleteMany({ where: { companyId: id } });
+        await tx.companyEligibleBranch.createMany({
+          data: eligibleBranchIds.map((branchId: number) => ({ companyId: id, branchId })),
         });
       }
-    }
 
-    const company = await prisma.company.update({
-      where: { id },
-      data: {
-        ...updateData,
-        ...(driveDate && { driveDate: new Date(driveDate) }),
-      },
-      include: {
-        eligibleBranches: { include: { branch: { select: { id: true, name: true } } } },
-        topics: { include: { topic: { select: { id: true, name: true } } } },
-      },
+      // Update topics if provided
+      if (topicIds) {
+        await tx.companyTopic.deleteMany({ where: { companyId: id } });
+        if (topicIds.length > 0) {
+          await tx.companyTopic.createMany({
+            data: topicIds.map((topicId: number) => ({ companyId: id, topicId })),
+          });
+        }
+      }
+
+      return await tx.company.update({
+        where: { id },
+        data: {
+          ...updateData,
+          ...(driveDate && { driveDate: new Date(driveDate) }),
+        },
+        include: {
+          eligibleBranches: { include: { branch: { select: { id: true, name: true } } } },
+          topics: { include: { topic: { select: { id: true, name: true } } } },
+        },
+      });
     });
+
+    await audit(
+      req.user!.id,
+      'company.update',
+      'company',
+      id,
+      'success',
+      { name: company.name, jobRole: company.jobRole, driveDate: company.driveDate, changedFields: Object.keys(req.body) }
+    );
 
     res.json({ success: true, data: company });
   } catch (err) {
@@ -292,6 +327,9 @@ export const deleteCompany = async (req: Request, res: Response, next: NextFunct
     }
 
     await prisma.company.delete({ where: { id } });
+
+    await audit(req.user!.id, 'company.delete', 'company', id, 'success', { name: existing.name });
+
     res.json({ success: true, data: { message: 'Company deleted' } });
   } catch (err) {
     next(err);

@@ -314,6 +314,7 @@ export default function ProblemDetailPage() {
             {/* Code Textarea */}
             <textarea
               id="code-editor"
+              aria-label="Code Editor"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               rows={18}

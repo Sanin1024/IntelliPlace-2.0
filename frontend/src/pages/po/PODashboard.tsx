@@ -253,7 +253,7 @@ export default function PODashboard() {
           <h2 style={cardHeading}>Average Readiness by Batch</h2>
           <span style={{ fontSize: '12px', color: '#64748b' }}>Batch-wise readiness benchmarks</span>
 
-          <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+          <div tabIndex={0} aria-label="Average Readiness by Batch Table" style={{ overflowX: 'auto', marginTop: '12px' }}>
             <table style={tableStyle}>
               <thead>
                 <tr style={tableHeadRow}>
@@ -284,7 +284,7 @@ export default function PODashboard() {
           <h2 style={cardHeading}>Average Readiness by Branch</h2>
           <span style={{ fontSize: '12px', color: '#64748b' }}>Branch-wise readiness benchmarks</span>
 
-          <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+          <div tabIndex={0} aria-label="Average Readiness by Branch Table" style={{ overflowX: 'auto', marginTop: '12px' }}>
             <table style={tableStyle}>
               <thead>
                 <tr style={tableHeadRow}>
@@ -328,7 +328,7 @@ export default function PODashboard() {
             <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No drives announced yet.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div tabIndex={0} aria-label="Upcoming Drives and Cohort Match Table" style={{ overflowX: 'auto' }}>
             <table style={tableStyle}>
               <thead>
                 <tr style={tableHeadRow}>
@@ -393,7 +393,7 @@ export default function PODashboard() {
             </p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div tabIndex={0} aria-label="Students Requiring Attention Table" style={{ overflowX: 'auto' }}>
             <table style={tableStyle}>
               <thead>
                 <tr style={tableHeadRow}>
@@ -593,6 +593,9 @@ const viewAllLink: React.CSSProperties = {
   color: '#2563eb',
   fontWeight: 600,
   textDecoration: 'none',
+  minHeight: '40px',
+  display: 'inline-flex',
+  alignItems: 'center',
 };
 
 const tableStyle: React.CSSProperties = {
@@ -628,6 +631,9 @@ const tableActionLink: React.CSSProperties = {
   color: '#2563eb',
   fontWeight: 600,
   textDecoration: 'none',
+  minHeight: '40px',
+  display: 'inline-flex',
+  alignItems: 'center',
 };
 
 const readinessTagStyle = (score: number): React.CSSProperties => ({

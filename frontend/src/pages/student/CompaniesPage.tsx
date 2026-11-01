@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { companyApi } from '../../api/company';
 import type { Company } from '../../api/company';
+import PrepPlanSection from '../../components/PrepPlanSection';
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -186,6 +187,7 @@ export default function CompaniesPage() {
                     </div>
                   </div>
                 )}
+                <PrepPlanSection companyId={company.id} />
               </div>
             )}
           </div>

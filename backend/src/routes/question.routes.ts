@@ -18,9 +18,9 @@ router.use(requireAuth);
 router.get('/', getAllQuestions);
 router.get('/:id', validate(questionIdSchema), getQuestionById);
 
-// Write access: trainer only
-router.post('/', requireRole('trainer'), validate(createQuestionSchema), createQuestion);
-router.put('/:id', requireRole('trainer'), validate(updateQuestionSchema), updateQuestion);
-router.delete('/:id', requireRole('trainer'), validate(questionIdSchema), deleteQuestion);
+// Write access: trainer and admin
+router.post('/', requireRole('trainer', 'admin'), validate(createQuestionSchema), createQuestion);
+router.put('/:id', requireRole('trainer', 'admin'), validate(updateQuestionSchema), updateQuestion);
+router.delete('/:id', requireRole('trainer', 'admin'), validate(questionIdSchema), deleteQuestion);
 
 export default router;

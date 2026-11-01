@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
-import { prisma } from '../config/prisma.js';
+import { prisma, Prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 
 /**
@@ -34,6 +33,8 @@ export const createTest = async (req: Request, res: Response, next: NextFunction
     const {
       title, description, durationMins, batchId,
       availableFrom, availableUntil, maxAttempts, questionIds,
+      negativeMarks, shuffleQuestions, shuffleOptions,
+      generationMode, questionRules, showResults, securityConfig, status,
     } = req.body;
 
     // Verify all question IDs exist
@@ -60,6 +61,14 @@ export const createTest = async (req: Request, res: Response, next: NextFunction
         availableFrom: availableFrom ? new Date(availableFrom) : null,
         availableUntil: availableUntil ? new Date(availableUntil) : null,
         maxAttempts: maxAttempts || 1,
+        status: status || 'published',
+        negativeMarks: negativeMarks ?? 0,
+        shuffleQuestions: shuffleQuestions ?? false,
+        shuffleOptions: shuffleOptions ?? false,
+        generationMode: generationMode || 'fixed',
+        questionRules: questionRules ?? undefined,
+        showResults: showResults || 'after_submit',
+        securityConfig: securityConfig ?? undefined,
         createdBy: req.user!.id,
         questions: {
           create: questionIds.map((questionId: string) => ({ questionId })),
@@ -194,6 +203,18 @@ export const getTestById = async (req: Request, res: Response, next: NextFunctio
     });
 
     if (!test) throw ApiError.notFound('Test not found');
+
+    // Students only receive test metadata; questions are delivered only during an active timed attempt
+    if (!isStaff) {
+      const { questions, ...metadata } = test;
+      return res.json({
+        success: true,
+        data: {
+          ...metadata,
+          questionCount: questions.length,
+        },
+      });
+    }
 
     res.json({ success: true, data: test });
   } catch (err) {

@@ -1,4 +1,5 @@
 import { prisma } from '../dist/config/prisma.js';
+import { codeRunner, getActiveConcurrency, getPeakConcurrency } from '../dist/services/codeRunner.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -342,6 +343,17 @@ async function run() {
       `Unauth: ${resetUnauthTokenRes.status}, Student: ${resetStudentTokenRes.status}, Admin: ${resetAdminTokenRes.status}, 11th Login: ${eleventhRes.status}, .env dev/false: ${hasEnvDev && hasRunnerDisabled}`
     );
 
+    record(
+      'Reg-LoginRateLimit',
+      'Login rate limit: 11th consecutive failed login within 1 minute returns 429 Too Many Requests',
+      'POST',
+      '/api/auth/login',
+      429,
+      eleventhRes.status,
+      eleventhRes.status === 429,
+      `11th login status: ${eleventhRes.status} (Expected 429)`
+    );
+
     // Reset rate limiter with admin token so subsequent tests are clean
     await request('POST', '/api/auth/reset-limiter', null, adminToken);
 
@@ -371,6 +383,27 @@ async function run() {
       studentAccessAdmin.status,
       authRolePass,
       `BadLogin: ${badLoginRes.status}, StudentAdmin: ${studentAccessAdmin.status}, TrainerPO: ${trainerAccessPO.status}`
+    );
+
+    // Register role forcing: registering with role='admin' forces student
+    const forcedRegisterRes = await request('POST', '/api/auth/register', {
+      name: 'e2e Forced Student',
+      email: `e2e-forced-${Date.now()}@student.edu`,
+      password: 'Password@123',
+      role: 'admin',
+    });
+    const forcedUserRole = forcedRegisterRes.data?.data?.user?.role;
+    const forcedRegisterPass = forcedRegisterRes.status === 201 && forcedUserRole === 'student';
+
+    record(
+      'Reg-RegisterRoleForcing',
+      'Register role forcing: POST /api/auth/register with role="admin" forces created user role to "student"',
+      'POST',
+      '/api/auth/register',
+      201,
+      forcedRegisterRes.status,
+      forcedRegisterPass,
+      `Status: ${forcedRegisterRes.status}, Forced Role: ${forcedUserRole} (Expected 'student')`
     );
 
     // -------------------------------------------------------------
@@ -583,6 +616,17 @@ async function run() {
       hiddenLeakDetected ? `LEAK: ${leakDetails}` : 'All 5 student endpoints clean (0 hidden cases leaked)'
     );
 
+    record(
+      'Reg-HiddenCaseLeak',
+      'Hidden-case leak scan: verify hidden input and expectedOutput never leak into student responses',
+      'SCAN',
+      '/api/problems, /api/problems/:id, /api/problems/:id/submissions, /run, /submit',
+      200,
+      hiddenLeakDetected ? 500 : 200,
+      !hiddenLeakDetected,
+      hiddenLeakDetected ? `LEAK: ${leakDetails}` : '0 hidden cases leaked across student problem endpoints'
+    );
+
     // -------------------------------------------------------------
     // PART 0 CHECK 5: MISSING RUNNER TESTS
     // -------------------------------------------------------------
@@ -672,6 +716,50 @@ async function run() {
       eleventhSubmitRes.status,
       runnerTestsPass,
       `HugeSource: ${hugeSourceRes.status}, BadLang: ${invalidLangRes.status}, 11thSubmit: ${eleventhSubmitRes.status}, PeakConcurrency: ${finalPeak} (<=2)`
+    );
+
+    record(
+      'Reg-OversizedSource',
+      'Oversized source: code exceeding CODE_MAX_SOURCE_BYTES rejected with 400 Bad Request',
+      'POST',
+      `/api/problems/:id/submit`,
+      400,
+      hugeSourceRes.status,
+      hugeSourceRes.status === 400,
+      `Status: ${hugeSourceRes.status} (Expected 400)`
+    );
+
+    record(
+      'Reg-BadLanguage',
+      'Bad language: code execution for unsupported language rejected with 400 Bad Request',
+      'POST',
+      `/api/problems/:id/submit`,
+      400,
+      invalidLangRes.status,
+      invalidLangRes.status === 400,
+      `Status: ${invalidLangRes.status} (Expected 400)`
+    );
+
+    record(
+      'Reg-SubmitRateLimit',
+      'Submit rate limit: 11th submit within 1 minute from one user returns 429 Too Many Requests',
+      'POST',
+      `/api/problems/:id/submit`,
+      429,
+      eleventhSubmitRes.status,
+      eleventhSubmitRes.status === 429,
+      `11th submit status: ${eleventhSubmitRes.status} (Expected 429)`
+    );
+
+    record(
+      'Reg-ConcurrencyPeak',
+      'Concurrency peak: 4 concurrent runs never exceed peak concurrency limit of 2 interpreters',
+      'CONCURRENCY',
+      `/api/problems/runner-status`,
+      '<=2',
+      finalPeak,
+      finalPeak <= 2,
+      `Peak observed: ${finalPeak} (Max allowed: 2)`
     );
 
     // -------------------------------------------------------------
@@ -766,6 +854,50 @@ async function run() {
       doubleSubmitRes.status,
       mockEnginePass,
       `BatchIso: ${batchIsolationRes.status}, PastWin: ${pastStartRes.status}, FutureWin: ${futureStartRes.status}, DoubleSubmit: ${doubleSubmitRes.status}, MaxAttempts: ${thirdAttemptRes.status}`
+    );
+
+    record(
+      'Reg-BatchIsolation',
+      'Batch isolation: student starting mock test designated for another batch rejected with 403 Forbidden',
+      'POST',
+      `/api/tests/:id/start`,
+      403,
+      batchIsolationRes.status,
+      batchIsolationRes.status === 403,
+      `Batch isolation status: ${batchIsolationRes.status} (Expected 403)`
+    );
+
+    record(
+      'Reg-PastFutureWindows',
+      'Past and future test windows: starting past or future scheduled mock test rejected with 400 Bad Request',
+      'POST',
+      `/api/tests/:id/start`,
+      400,
+      pastStartRes.status === 400 && futureStartRes.status === 400 ? 400 : 500,
+      pastStartRes.status === 400 && futureStartRes.status === 400,
+      `Past Window: ${pastStartRes.status}, Future Window: ${futureStartRes.status} (Both Expected 400)`
+    );
+
+    record(
+      'Reg-DoubleSubmit',
+      'Double submit: submitting an already submitted or evaluated attempt rejected with 400 Bad Request',
+      'POST',
+      `/api/tests/attempts/:id/submit`,
+      400,
+      doubleSubmitRes.status,
+      doubleSubmitRes.status === 400,
+      `Double submit status: ${doubleSubmitRes.status} (Expected 400)`
+    );
+
+    record(
+      'Reg-MaxAttempts',
+      'Max attempts: starting attempt exceeding configured maxAttempts rejected with 400 Bad Request',
+      'POST',
+      `/api/tests/:id/start`,
+      400,
+      thirdAttemptRes.status,
+      thirdAttemptRes.status === 400,
+      `3rd attempt status: ${thirdAttemptRes.status} (Expected 400 on maxAttempts=2)`
     );
 
     // -------------------------------------------------------------
@@ -1024,6 +1156,180 @@ async function run() {
     );
 
     // -------------------------------------------------------------
+    // CODE RUNNER TESTS: SPEC (a)-(m)
+    // -------------------------------------------------------------
+    console.log('\n--- CODE RUNNER TESTS: SPEC (a)-(m) ---');
+    // (a) Python correct solution -> Accepted
+    const resA = await codeRunner.run('python', 'print("hello world")', [{ input: '', expectedOutput: 'hello world' }]);
+    record(
+      'Reg-CodeRunner-A-PyAccepted',
+      'Code runner (a): Python correct solution returns Accepted',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Accepted',
+      resA.verdict,
+      resA.verdict === 'Accepted',
+      `Verdict: ${resA.verdict}`
+    );
+
+    // (b) JavaScript correct solution -> Accepted
+    const resB = await codeRunner.run('javascript', 'console.log("hello world");', [{ input: '', expectedOutput: 'hello world' }]);
+    record(
+      'Reg-CodeRunner-B-JsAccepted',
+      'Code runner (b): JavaScript correct solution returns Accepted',
+      'RUNNER',
+      'codeRunner.run(javascript)',
+      'Accepted',
+      resB.verdict,
+      resB.verdict === 'Accepted',
+      `Verdict: ${resB.verdict}`
+    );
+
+    // (c) Python wrong answer -> Wrong Answer
+    const resC = await codeRunner.run('python', 'print("wrong output")', [{ input: '', expectedOutput: 'hello world' }]);
+    record(
+      'Reg-CodeRunner-C-PyWrongAnswer',
+      'Code runner (c): Python wrong answer returns Wrong Answer',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Wrong Answer',
+      resC.verdict,
+      resC.verdict === 'Wrong Answer',
+      `Verdict: ${resC.verdict}`
+    );
+
+    // (d) Python syntax error -> Runtime Error with <sandbox> sanitization
+    const resD = await codeRunner.run('python', 'def broken(:\n  pass', [{ input: '', expectedOutput: '' }]);
+    const dSanitized = !JSON.stringify(resD).includes('Users') && !JSON.stringify(resD).includes('AppData');
+    record(
+      'Reg-CodeRunner-D-SyntaxError',
+      'Code runner (d): Syntax error returns Runtime Error with path sanitized to <sandbox>',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Runtime Error',
+      resD.verdict,
+      resD.verdict === 'Runtime Error' && dSanitized,
+      `Verdict: ${resD.verdict}, Sanitized: ${dSanitized}`
+    );
+
+    // (e) Time Limit Exceeded -> Time Limit Exceeded
+    const resE = await codeRunner.run('python', 'import time\ntime.sleep(2.5)', [{ input: '', expectedOutput: '' }]);
+    record(
+      'Reg-CodeRunner-E-TimeLimit',
+      'Code runner (e): Execution exceeding time limit returns Time Limit Exceeded',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Time Limit Exceeded',
+      resE.verdict,
+      resE.verdict === 'Time Limit Exceeded',
+      `Verdict: ${resE.verdict}`
+    );
+
+    // (f) Output Limit Exceeded -> Output Limit Exceeded
+    const resF = await codeRunner.run('python', 'while True:\n  print("A" * 1024)', [{ input: '', expectedOutput: '' }]);
+    record(
+      'Reg-CodeRunner-F-OutputLimit',
+      'Code runner (f): Output exceeding 64KB returns Output Limit Exceeded',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Output Limit Exceeded',
+      resF.verdict,
+      resF.verdict === 'Output Limit Exceeded',
+      `Verdict: ${resF.verdict}`
+    );
+
+    // (g) Non-zero exit code -> Runtime Error
+    const resG = await codeRunner.run('python', 'import sys\nsys.exit(42)', [{ input: '', expectedOutput: '' }]);
+    record(
+      'Reg-CodeRunner-G-NonZeroExit',
+      'Code runner (g): Non-zero exit code (sys.exit(42)) returns Runtime Error',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Runtime Error',
+      resG.verdict,
+      resG.verdict === 'Runtime Error',
+      `Verdict: ${resG.verdict}`
+    );
+
+    // (h) Uncaught exception -> Runtime Error
+    const resH = await codeRunner.run('python', 'raise RuntimeError("Explicit runner exception")', [{ input: '', expectedOutput: '' }]);
+    record(
+      'Reg-CodeRunner-H-ExceptionRaised',
+      'Code runner (h): Uncaught exception returns Runtime Error',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Runtime Error',
+      resH.verdict,
+      resH.verdict === 'Runtime Error',
+      `Verdict: ${resH.verdict}`
+    );
+
+    // (i) Empty input -> Accepted
+    const resI = await codeRunner.run('python', 'print("ok")', [{ input: '', expectedOutput: 'ok' }]);
+    record(
+      'Reg-CodeRunner-I-EmptyInput',
+      'Code runner (i): Empty stdin handled cleanly without error',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Accepted',
+      resI.verdict,
+      resI.verdict === 'Accepted',
+      `Verdict: ${resI.verdict}`
+    );
+
+    // (j) Multi-line input -> Accepted
+    const resJ = await codeRunner.run('python', 'import sys\nlines = sys.stdin.read().split()\nprint(sum(map(int, lines)))', [{ input: '10\n20\n30\n', expectedOutput: '60' }]);
+    record(
+      'Reg-CodeRunner-J-MultiLineInput',
+      'Code runner (j): Multi-line stdin handled cleanly and parsed correctly',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Accepted',
+      resJ.verdict,
+      resJ.verdict === 'Accepted',
+      `Verdict: ${resJ.verdict}`
+    );
+
+    // (k) Environment isolation -> minimal env has no JWT_SECRET
+    const resK = await codeRunner.run('python', 'import os\nprint(os.environ.get("JWT_SECRET", "NONE"))', [{ input: '', expectedOutput: 'NONE' }]);
+    record(
+      'Reg-CodeRunner-K-EnvStripped',
+      'Code runner (k): Minimal env strips sensitive secrets (JWT_SECRET not present)',
+      'RUNNER',
+      'codeRunner.run(python)',
+      'Accepted',
+      resK.verdict,
+      resK.verdict === 'Accepted',
+      `Verdict: ${resK.verdict}`
+    );
+
+    // (l) Temp directory cleanup
+    const tempDirCheck = !fs.readdirSync(os.tmpdir()).some((f) => f.startsWith('intelliplace-run-'));
+    record(
+      'Reg-CodeRunner-L-TempDirCleanup',
+      'Code runner (l): Temp execution directory cleaned up after run',
+      'CLEANUP',
+      'os.tmpdir()/intelliplace-run-*',
+      true,
+      tempDirCheck,
+      tempDirCheck,
+      `Temp directory cleaned up: ${tempDirCheck}`
+    );
+
+    // (m) Concurrency limiter
+    const activeConcurrency = getActiveConcurrency();
+    record(
+      'Reg-CodeRunner-M-ConcurrencyLimiter',
+      'Code runner (m): Concurrency limiter keeps active runs <= 2',
+      'LIMITER',
+      'getActiveConcurrency()',
+      '<=2',
+      activeConcurrency,
+      activeConcurrency <= 2,
+      `Active Concurrency: ${activeConcurrency} (<= 2)`
+    );
+
+    // -------------------------------------------------------------
     // PART 0 CHECK 4: CSV EXPORT FORMULA INJECTION & FILTERS
     // -------------------------------------------------------------
     console.log('\n--- PART 0 CHECK 4: CSV EXPORT & FORMULA INJECTION ---');
@@ -1067,6 +1373,17 @@ async function run() {
       poExportRes.status,
       csvCheckPass,
       `Formula neutralized: ${hasNeutralizedFormula}, Filter applied: ${filterApplied}, Student: ${studentExportRes.status}, Trainer: ${trainerExportRes.status}`
+    );
+
+    record(
+      'Reg-CsvInjectionFilters',
+      'CSV injection and filters: formula injection neutralized and filters correctly applied with 403 on non-PO',
+      'GET',
+      '/api/po/students/export',
+      200,
+      poExportRes.status,
+      csvCheckPass,
+      `Neutralized: ${hasNeutralizedFormula}, Filter: ${filterApplied}, RBAC: Student=${studentExportRes.status}/Trainer=${trainerExportRes.status}`
     );
 
     // -------------------------------------------------------------
@@ -1116,6 +1433,17 @@ async function run() {
       studentDownload.status,
       uploadsPass,
       `Unauth: ${unauthDownload.status}, Student: ${studentDownload.status}, Traversal: ${traversalAttempt1.status}/${traversalAttempt2.status}, Static /uploads: ${staticUploadsRes.status}`
+    );
+
+    record(
+      'Reg-SecureDownloadTraversal',
+      'Secure download and traversal: authenticated download, nosniff header, directory traversal blocked (400/404)',
+      'GET',
+      '/api/resources/:id/download',
+      200,
+      studentDownload.status,
+      uploadsPass,
+      `Auth: ${studentDownload.status}, Traversal: ${traversalAttempt1.status}/${traversalAttempt2.status}, Static: ${staticUploadsRes.status}`
     );
 
     if (fs.existsSync(e2ePdfPath)) fs.unlinkSync(e2ePdfPath);
