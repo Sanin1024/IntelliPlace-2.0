@@ -5,6 +5,13 @@ import { fileURLToPath } from 'url';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import { uploadDir } from '../config/multer.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+  resolveBranchIdOrThrow,
+} from '../middleware/departmentAccess.js';
+import { canAccessResource } from '../services/resourceManagement.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +23,7 @@ const __dirname = path.dirname(__filename);
  */
 export const uploadResource = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, topicId } = req.body;
+    const { title, description, topicId, branchId } = req.body;
     const file = (req as any).file as Express.Multer.File | undefined;
 
     if (!file) {
@@ -32,6 +39,9 @@ export const uploadResource = async (req: Request, res: Response, next: NextFunc
       if (!topic) throw ApiError.badRequest('Topic not found');
     }
 
+    // Department scoping: null/empty => global (all departments)
+    const resolvedBranchId = await resolveBranchIdOrThrow(branchId);
+
     // Construct the public URL for the file
     const fileUrl = `/uploads/${file.filename}`;
 
@@ -41,10 +51,12 @@ export const uploadResource = async (req: Request, res: Response, next: NextFunc
         description: description || null,
         fileUrl,
         topicId: topicIdNum,
+        branchId: resolvedBranchId,
         uploadedBy: req.user!.id,
       },
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         uploader: { select: { id: true, name: true } },
       },
     });
@@ -80,10 +92,18 @@ export const getAllResources = async (req: Request, res: Response, next: NextFun
       ];
     }
 
+    // Department scoping: students only see global resources + their own department's
+    if (!['trainer', 'admin', 'po'].includes(req.user?.role || '')) {
+      const branchCtx = await getStudentBranchContext(req);
+      const branchFilter = branchScopeFilter(branchCtx);
+      where.OR = search ? [...where.OR, branchFilter] : branchFilter.OR;
+    }
+
     const resources = await prisma.resource.findMany({
       where,
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         uploader: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -151,8 +171,18 @@ export const downloadResource = async (req: Request, res: Response, next: NextFu
       throw ApiError.badRequest('Invalid resource identifier');
     }
 
-    const resource = await prisma.resource.findUnique({ where: { id } });
+    const resource = await prisma.resource.findUnique({
+      where: { id },
+      include: { branch: { select: { id: true, code: true } } },
+    });
     if (!resource) throw ApiError.notFound('Resource not found');
+
+    // Department + visibility authorization (backend-enforced, works for direct API calls)
+    const allowed = await canAccessResource(req.user!, id);
+    if (!allowed) {
+      throw ApiError.forbidden('You do not have access to this resource');
+    }
+    await assertStudentCanAccessContent(req, resource.branchId);
 
     const filename = path.basename(resource.fileUrl);
     // Path check: make sure the resolved path stays inside uploadDir

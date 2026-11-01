@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireDepartmentBranch } from '../middleware/departmentAccess.js';
 import * as c from '../controllers/eeeTraining.controller.js';
 
 const router = Router();
 router.use(requireAuth);
+
+// Department-level access control: only students of the EE department (and staff) may use this module
+router.use(requireDepartmentBranch('EE'));
 
 // Question Bank
 router.get('/questions', c.getQuestions);

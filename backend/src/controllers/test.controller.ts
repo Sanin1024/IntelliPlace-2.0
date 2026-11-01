@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma, Prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+  resolveBranchIdOrThrow,
+} from '../middleware/departmentAccess.js';
 
 /**
  * Helper: check if a test is currently available to a student.
@@ -11,6 +17,7 @@ const isTestAvailable = (test: any, studentProfile: any): boolean => {
   if (test.availableFrom && now < new Date(test.availableFrom)) return false;
   if (test.availableUntil && now > new Date(test.availableUntil)) return false;
   if (test.batchId && studentProfile?.batchId !== test.batchId) return false;
+  if (test.branchId && studentProfile?.branchId !== test.branchId) return false; // Department scoping
   return true;
 };
 
@@ -31,7 +38,7 @@ const getRemainingAttempts = async (testId: string, studentId: string, maxAttemp
 export const createTest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
-      title, description, durationMins, batchId,
+      title, description, durationMins, batchId, branchId,
       availableFrom, availableUntil, maxAttempts, questionIds,
       negativeMarks, shuffleQuestions, shuffleOptions,
       generationMode, questionRules, showResults, securityConfig, status,
@@ -52,12 +59,16 @@ export const createTest = async (req: Request, res: Response, next: NextFunction
       if (!batch) throw ApiError.badRequest('Batch not found');
     }
 
+    // Department scoping: null => global (all departments)
+    const resolvedBranchId = await resolveBranchIdOrThrow(branchId);
+
     const test = await prisma.mockTest.create({
       data: {
         title,
         description: description || null,
         durationMins,
         batchId: batchId || null,
+        branchId: resolvedBranchId,
         availableFrom: availableFrom ? new Date(availableFrom) : null,
         availableUntil: availableUntil ? new Date(availableUntil) : null,
         maxAttempts: maxAttempts || 1,
@@ -122,11 +133,14 @@ export const getAllTests = async (req: Request, res: Response, next: NextFunctio
       where: { userId: req.user!.id },
     });
 
+    // Department scoping: students never even see tests of other departments
+    const branchCtx = await getStudentBranchContext(req);
     const allTests = await prisma.mockTest.findMany({
-      where: { isActive: true },
+      where: { isActive: true, ...branchScopeFilter(branchCtx) },
       include: {
         questions: { select: { questionId: true } },
         batch: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         attempts: {
           where: { studentId: req.user!.id, attemptType: 'mock' },
           select: { id: true, status: true, score: true, totalMarks: true, startTime: true },
@@ -206,6 +220,8 @@ export const getTestById = async (req: Request, res: Response, next: NextFunctio
 
     // Students only receive test metadata; questions are delivered only during an active timed attempt
     if (!isStaff) {
+      // Department scoping: block direct by-id metadata access from other departments
+      await assertStudentCanAccessContent(req, test.branchId);
       const { questions, ...metadata } = test;
       return res.json({
         success: true,
@@ -237,6 +253,11 @@ export const updateTest = async (req: Request, res: Response, next: NextFunction
     // Only creator or admin can update
     if (req.user!.role !== 'admin' && existing.createdBy !== req.user!.id) {
       throw ApiError.forbidden('You can only update tests you created');
+    }
+
+    // Department scoping: validate + apply when provided (null resets to global)
+    if ('branchId' in updateData) {
+      updateData.branchId = await resolveBranchIdOrThrow(updateData.branchId);
     }
 
     const test = await prisma.mockTest.update({

@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+  resolveBranchIdOrThrow,
+} from '../middleware/departmentAccess.js';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type CorrectOption = 'A' | 'B' | 'C' | 'D';
@@ -14,7 +20,7 @@ export const createQuestion = async (req: Request, res: Response, next: NextFunc
     const {
       topicId, difficulty, questionText,
       optionA, optionB, optionC, optionD,
-      correctOption, explanation,
+      correctOption, explanation, branchId,
     } = req.body;
 
     // Verify topic exists and is an aptitude topic
@@ -24,14 +30,19 @@ export const createQuestion = async (req: Request, res: Response, next: NextFunc
       throw ApiError.badRequest('Topic must be of type "aptitude" for aptitude questions');
     }
 
+    // Department scoping: null => global (all departments)
+    const resolvedBranchId = await resolveBranchIdOrThrow(branchId);
+
     const question = await prisma.aptitudeQuestion.create({
       data: {
         topicId, difficulty, questionText,
         optionA, optionB, optionC, optionD,
         correctOption, explanation: explanation || null,
+        branchId: resolvedBranchId,
       },
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
       },
     });
 
@@ -58,6 +69,7 @@ export const getAllQuestions = async (req: Request, res: Response, next: NextFun
       topicId?: number;
       difficulty?: Difficulty;
       questionText?: { contains: string; mode: 'insensitive' };
+      OR?: Array<{ branchId: number | null }>;
     } = {};
 
     if (topicId) where.topicId = topicId;
@@ -68,10 +80,21 @@ export const getAllQuestions = async (req: Request, res: Response, next: NextFun
       where.questionText = { contains: search, mode: 'insensitive' };
     }
 
+    // Department scoping: students only see global questions + their own department's
+    // (PO manages content across all departments, so PO is exempt from scoping)
+    const exemptFromBranchScoping = ['trainer', 'admin', 'po'].includes(req.user?.role || '');
+    if (!exemptFromBranchScoping) {
+      const branchCtx = await getStudentBranchContext(req);
+      Object.assign(where, branchScopeFilter(branchCtx));
+    }
+
     const [questions, total] = await Promise.all([
       prisma.aptitudeQuestion.findMany({
         where,
-        include: { topic: { select: { id: true, name: true } } },
+        include: {
+          topic: { select: { id: true, name: true } },
+          branch: { select: { id: true, code: true, name: true } },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -79,6 +102,7 @@ export const getAllQuestions = async (req: Request, res: Response, next: NextFun
       prisma.aptitudeQuestion.count({ where }),
     ]);
 
+    // Answer-key visibility for staff only (original behavior preserved)
     const isStaff = ['trainer', 'admin'].includes(req.user?.role || '');
     const sanitizedQuestions = questions.map((q: any) => {
       if (isStaff) return q;
@@ -105,10 +129,16 @@ export const getQuestionById = async (req: Request, res: Response, next: NextFun
 
     const question = await prisma.aptitudeQuestion.findUnique({
       where: { id },
-      include: { topic: { select: { id: true, name: true } } },
+      include: {
+        topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
+      },
     });
 
     if (!question) throw ApiError.notFound('Question not found');
+
+    // Department scoping: block direct by-id access from other departments
+    await assertStudentCanAccessContent(req, question.branchId);
 
     const isStaff = ['trainer', 'admin'].includes(req.user?.role || '');
     let sanitizedQuestion: any = question;
@@ -135,6 +165,11 @@ export const updateQuestion = async (req: Request, res: Response, next: NextFunc
     const existing = await prisma.aptitudeQuestion.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Question not found');
 
+    // Department scoping: validate + apply when provided (null resets to global)
+    if ('branchId' in updateData) {
+      updateData.branchId = await resolveBranchIdOrThrow(updateData.branchId);
+    }
+
     // If topicId is being changed, verify it's valid
     if (updateData.topicId) {
       const topic = await prisma.topic.findUnique({ where: { id: updateData.topicId } });
@@ -144,7 +179,10 @@ export const updateQuestion = async (req: Request, res: Response, next: NextFunc
     const question = await prisma.aptitudeQuestion.update({
       where: { id },
       data: updateData,
-      include: { topic: { select: { id: true, name: true } } },
+      include: {
+        topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
+      },
     });
 
     res.json({ success: true, data: question });

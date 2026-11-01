@@ -12,6 +12,9 @@ export const createQuestionSchema = z.object({
     optionD: z.string().min(1, 'Option D is required'),
     correctOption: z.enum(['A', 'B', 'C', 'D']),
     explanation: z.string().optional(),
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null/omitted => global
   }),
 });
 
@@ -29,6 +32,9 @@ export const updateQuestionSchema = z.object({
     optionD: z.string().min(1).optional(),
     correctOption: z.enum(['A', 'B', 'C', 'D']).optional(),
     explanation: z.string().optional(),
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null resets to global
   }),
 });
 

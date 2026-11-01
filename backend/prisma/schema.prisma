@@ -444,9 +444,16 @@ model Branch {
   code             String?                 @unique @map("code") // e.g., "CS", "CAID", "CSBS"
   isActive         Boolean                 @default(true) @map("is_active")
   aliases          String[]                @default([])
-  students         StudentProfile[]
-  companies        CompanyEligibleBranch[]
+  students          StudentProfile[]
+  companies         CompanyEligibleBranch[]
   driveEligibility DriveEligibleBranch[]
+  aptitudeQuestions AptitudeQuestion[]
+  codingProblems    CodingProblem[]
+  resources         Resource[]
+  trainingResources TrainingResource[]
+  mockTests         MockTest[]
+  learningModules   LearningModule[]
+  interviewPrepPlans InterviewPreparationPlan[]
 
   @@map("branches")
 }
@@ -700,6 +707,8 @@ model AptitudeQuestion {
   id             String             @id @default(uuid())
   topicId        Int                @map("topic_id")
   topic          Topic              @relation(fields: [topicId], references: [id])
+  branchId       Int?               @map("branch_id") // Department scoping: null = available to all departments
+  branch         Branch?            @relation(fields: [branchId], references: [id])
   difficulty     Difficulty         @default(easy)
   questionText   String             @map("question_text")
   optionA        String             @map("option_a")
@@ -716,6 +725,7 @@ model AptitudeQuestion {
   versions       QuestionVersion[]
 
   @@index([topicId])
+  @@index([branchId])
   @@map("aptitude_questions")
 }
 
@@ -723,6 +733,8 @@ model CodingProblem {
   id                  String                      @id @default(uuid())
   topicId             Int                         @map("topic_id")
   topic               Topic                       @relation(fields: [topicId], references: [id])
+  branchId            Int?                        @map("branch_id") // Department scoping: null = available to all departments
+  branch              Branch?                     @relation(fields: [branchId], references: [id])
   difficulty          Difficulty                  @default(easy)
   title               String
   slug                String                      @unique
@@ -749,6 +761,7 @@ model CodingProblem {
   tasks               InterviewPreparationTask[]
 
   @@index([topicId, difficulty, status])
+  @@index([branchId])
   @@map("coding_problems")
 }
 
@@ -776,11 +789,14 @@ model InterviewPreparationPlan {
   difficulty  String   @default("medium")
   description String?
   status      String   @default("published")
+  branchId    Int?     @map("branch_id") // Department scoping: null = available to all departments
+  branch      Branch?  @relation(fields: [branchId], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
 
   tasks       InterviewPreparationTask[]
   enrollments StudentPreparationEnrollment[]
 
+  @@index([branchId])
   @@map("interview_preparation_plans")
 }
 
@@ -902,6 +918,8 @@ model Resource {
   alternatives      String[]           @default([])
   batchId           Int?               @map("batch_id")
   batch             Batch?             @relation(fields: [batchId], references: [id])
+  branchId          Int?               @map("branch_id") // Department scoping: null = available to all departments
+  branch            Branch?            @relation(fields: [branchId], references: [id])
 
   versions      ResourceVersion[]
   linkChecks    ResourceLinkCheck[]
@@ -911,6 +929,7 @@ model Resource {
   recommendations StudentRecommendation[]
 
   @@index([topicId])
+  @@index([branchId])
   @@map("resources")
 }
 
@@ -925,6 +944,8 @@ model MockTest {
   durationMins       Int                @default(30) @map("duration_mins")
   batchId            Int?               @map("batch_id")
   batch              Batch?             @relation(fields: [batchId], references: [id])
+  branchId           Int?               @map("branch_id") // Department scoping: null = available to all departments
+  branch             Branch?            @relation(fields: [branchId], references: [id])
   availableFrom      DateTime?          @map("available_from")
   availableUntil     DateTime?          @map("available_until")
   maxAttempts        Int                @default(1) @map("max_attempts")
@@ -945,6 +966,7 @@ model MockTest {
   attempts           TestAttempt[]
 
   @@index([batchId])
+  @@index([branchId])
   @@map("mock_tests")
 }
 
@@ -1842,6 +1864,8 @@ model LearningModule {
   level            ModuleLevel
   topicId          Int?        @map("topic_id")
   topic            Topic?      @relation(fields: [topicId], references: [id])
+  branchId         Int?        @map("branch_id") // Department scoping: null = available to all departments
+  branch           Branch?     @relation(fields: [branchId], references: [id])
   resourceId       String?     @unique @map("resource_id")
   resource         Resource?   @relation("ModuleResource", fields: [resourceId], references: [id])
   assessmentTestId String?     @map("assessment_test_id")
@@ -1858,6 +1882,8 @@ model LearningModule {
   trainingSessions  TrainingSession[]
 
   @@map("learning_modules")
+  @@index([branchId])
+
 }
 
 model ModulePrerequisite {
@@ -2536,6 +2562,8 @@ model TrainingResource {
   status       String               @default("published") // pending_review, published, archived
   careerTrackId String?             @map("career_track_id")
   careerTrack   CareerTrack?        @relation("CareerTrackResources", fields: [careerTrackId], references: [id])
+  branchId      Int?                @map("branch_id") // Department scoping: null = available to all departments
+  branch        Branch?             @relation(fields: [branchId], references: [id])
   createdBy    String               @map("created_by")
   createdAt    DateTime             @default(now()) @map("created_at")
   updatedAt    DateTime             @updatedAt @map("updated_at")
@@ -2544,6 +2572,7 @@ model TrainingResource {
   progress     ResourceProgress[]
 
   @@index([resourceType, category, status])
+  @@index([branchId])
   @@map("training_resources")
 }
 

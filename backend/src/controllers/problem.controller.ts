@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+  resolveBranchIdOrThrow,
+} from '../middleware/departmentAccess.js';
+import {
   codeRunner,
   checkSubmitRateLimit,
   getActiveConcurrency,
@@ -18,7 +24,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
   try {
     const {
       topicId, difficulty, title, description,
-      sampleInput, sampleOutput, tags, testCases,
+      sampleInput, sampleOutput, tags, testCases, branchId, slug,
     } = req.body;
 
     // Verify topic exists and is a coding topic
@@ -28,11 +34,29 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
       throw ApiError.badRequest('Topic must be of type "coding" for coding problems');
     }
 
+    // Department scoping: null => global (all departments)
+    const resolvedBranchId = await resolveBranchIdOrThrow(branchId);
+
+    // Slug: use the provided one or derive a unique slug from the title
+    let resolvedSlug: string = (slug || '').trim();
+    if (!resolvedSlug) {
+      const base = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'problem';
+      resolvedSlug = `${base}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    }
+    const slugConflict = await prisma.codingProblem.findUnique({ where: { slug: resolvedSlug } });
+    if (slugConflict) throw ApiError.badRequest('A problem with this slug already exists');
+
     const problem = await prisma.codingProblem.create({
       data: {
         topicId, difficulty, title, description,
+        slug: resolvedSlug,
         sampleInput, sampleOutput,
         tags: tags || [],
+        branchId: resolvedBranchId,
         testCases: {
           create: testCases.map((tc: { input: string; expectedOutput: string; isHidden?: boolean }) => ({
             input: tc.input,
@@ -43,6 +67,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
       },
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         testCases: true,
       },
     });
@@ -85,11 +110,22 @@ export const getAllProblems = async (req: Request, res: Response, next: NextFunc
       ];
     }
 
+    // Department scoping: students only see global problems + their own department's
+    // (PO manages content across all departments, so PO is exempt from scoping)
+    if (!['trainer', 'admin', 'po'].includes(req.user!.role)) {
+      const branchCtx = await getStudentBranchContext(req);
+      const branchFilter = branchScopeFilter(branchCtx);
+      where.OR = search
+        ? [...where.OR, branchFilter]
+        : branchFilter.OR;
+    }
+
     const [problems, total] = await Promise.all([
       prisma.codingProblem.findMany({
         where,
         include: {
           topic: { select: { id: true, name: true } },
+          branch: { select: { id: true, code: true, name: true } },
           testCases: isStaff ? true : { where: { isHidden: false } },
           _count: { select: { submissions: true } },
         },
@@ -136,12 +172,16 @@ export const getProblemById = async (req: Request, res: Response, next: NextFunc
       where: { id },
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         testCases: isStaff ? true : { where: { isHidden: false } },
         _count: { select: { submissions: true } },
       },
     });
 
     if (!problem) throw ApiError.notFound('Problem not found');
+
+    // Department scoping: block direct by-id access from other departments
+    await assertStudentCanAccessContent(req, problem.branchId);
 
     // Strip expectedOutput for students
     let responseData: any = problem;
@@ -174,6 +214,11 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
     const existing = await prisma.codingProblem.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Problem not found');
 
+    // Department scoping: validate + apply when provided (null resets to global)
+    if ('branchId' in updateData) {
+      updateData.branchId = await resolveBranchIdOrThrow(updateData.branchId);
+    }
+
     // If testCases are provided, delete old ones and create new ones
     if (testCases && testCases.length > 0) {
       await prisma.codingTestCase.deleteMany({ where: { problemId: id } });
@@ -192,6 +237,7 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
       data: updateData,
       include: {
         topic: { select: { id: true, name: true } },
+        branch: { select: { id: true, code: true, name: true } },
         testCases: true,
       },
     });
@@ -285,6 +331,9 @@ export const runCode = async (req: Request, res: Response, next: NextFunction) =
       throw ApiError.badRequest('No sample test cases configured for this problem');
     }
 
+    // Department scoping: block code execution against other departments' problems
+    await assertStudentCanAccessContent(req, problem.branchId);
+
     const runResult = await codeRunner.run(language, code, problem.testCases);
 
     res.json({
@@ -339,6 +388,9 @@ export const submitCode = async (req: Request, res: Response, next: NextFunction
     });
 
     if (!problem) throw ApiError.notFound('Problem not found');
+
+    // Department scoping: block submissions against other departments' problems
+    await assertStudentCanAccessContent(req, problem.branchId);
 
     const runResult = await codeRunner.run(language, code, problem.testCases);
 
@@ -395,6 +447,15 @@ export const getSubmissions = async (req: Request, res: Response, next: NextFunc
   try {
     const id = req.params['id'] as string;
     const isStaff = ['trainer', 'admin'].includes(req.user!.role);
+
+    // Department scoping: students cannot list submissions of another department's problem
+    if (!isStaff) {
+      const problem = await prisma.codingProblem.findUnique({
+        where: { id },
+        select: { branchId: true },
+      });
+      if (problem) await assertStudentCanAccessContent(req, problem.branchId);
+    }
 
     const submissions = await prisma.codingSubmission.findMany({
       where: {

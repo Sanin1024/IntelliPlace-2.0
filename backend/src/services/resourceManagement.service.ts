@@ -204,6 +204,15 @@ export async function canAccessResource(
   });
   if (!resource) return false;
 
+  // Department scoping: content tied to another branch is never accessible to students
+  if (resource.branchId !== null) {
+    const profile = await prisma.studentProfile.findUnique({
+      where: { userId: user.id },
+      select: { branchId: true },
+    });
+    if (!profile || profile.branchId !== resource.branchId) return false;
+  }
+
   switch (resource.visibility) {
     case 'public':
       return true; // any authenticated user

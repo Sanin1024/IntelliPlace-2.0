@@ -14,6 +14,9 @@ export const createTestSchema = z.object({
     availableUntil: z.string().datetime().nullable().optional(),
     maxAttempts: z.number().int().min(1).max(5).default(1),
     questionIds: z.array(z.string().min(1)).min(1, 'At least one question is required'),
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null/omitted => global
     negativeMarks: z.number().min(0).default(0).optional(),
     shuffleQuestions: z.boolean().default(false).optional(),
     shuffleOptions: z.boolean().default(false).optional(),
@@ -32,6 +35,9 @@ export const updateTestSchema = z.object({
     description: z.string().optional(),
     durationMins: z.number().int().min(5).max(180).optional(),
     batchId: z.number().int().positive().nullable().optional(),
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null resets to global
     availableFrom: z.string().datetime().nullable().optional(),
     availableUntil: z.string().datetime().nullable().optional(),
     maxAttempts: z.number().int().min(1).max(5).optional(),

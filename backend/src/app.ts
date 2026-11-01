@@ -50,6 +50,7 @@ import mechanicalTrainingRoutes from './routes/mechanicalTraining.routes.js';
 import civilTrainingRoutes from './routes/civilTraining.routes.js';
 import eeeTrainingRoutes from './routes/eeeTraining.routes.js';
 import itTrainingRoutes from './routes/itTraining.routes.js';
+import eceTrainingRoutes from './routes/eceTraining.routes.js';
 import { processScheduledReminder } from './services/emns.service.js';
 import { evaluateRetention } from './services/privacy.service.js';
 import {
@@ -356,6 +357,7 @@ app.use('/api/mechanical-training', mechanicalTrainingRoutes); // Mechanical Eng
 app.use('/api/civil-training', civilTrainingRoutes); // Civil Engineering Placement Training Module
 app.use('/api/eee-training', eeeTrainingRoutes); // Electrical and Electronics Engineering Placement Training Module
 app.use('/api/it-training', itTrainingRoutes); // Information Technology Placement Training Module
+app.use('/api/ece-training', eceTrainingRoutes); // Electronics and Communication Engineering Placement Training Module (department-gated: EC)
 
 // Admin retry endpoint for drive notifications
 app.post(

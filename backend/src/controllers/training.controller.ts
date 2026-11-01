@@ -31,6 +31,12 @@ import {
   getContentRelevance,
   toEffectivenessCsv,
 } from '../services/trainingAnalytics.service.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+  resolveBranchIdOrThrow,
+} from '../middleware/departmentAccess.js';
 
 // ============================================================
 // SESSIONS (Challenge 51)
@@ -268,6 +274,7 @@ export const createModule = async (req: Request, res: Response, next: NextFuncti
       prerequisiteModuleIds,
       orderIndex,
       requiredSkills,
+      branchId,
     } = req.body;
 
     if (resourceId) {
@@ -279,12 +286,16 @@ export const createModule = async (req: Request, res: Response, next: NextFuncti
       }
     }
 
+    // Department scoping: null => global (all departments)
+    const resolvedBranchId = await resolveBranchIdOrThrow(branchId);
+
     const module = await prisma.learningModule.create({
       data: {
         title,
         description,
         level,
         topicId: topicId || null,
+        branchId: resolvedBranchId,
         resourceId: resourceId || null,
         assessmentTestId: assessmentTestId || null,
         codingProblemId: codingProblemId || null,
@@ -311,9 +322,14 @@ export const createModule = async (req: Request, res: Response, next: NextFuncti
 
 export const listModules = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Department scoping: students only see global modules + their own department's
+    const branchCtx = await getStudentBranchContext(req);
+    const isStudent = req.user!.role === 'student';
     const modules = await prisma.learningModule.findMany({
+      where: isStudent ? branchScopeFilter(branchCtx) : {},
       include: {
         resource: { select: { id: true, title: true, difficulty: true, visibility: true } },
+        branch: { select: { id: true, code: true, name: true } },
         prerequisites: {
           include: { prerequisiteModule: { select: { id: true, title: true, level: true } } },
         },
@@ -358,6 +374,14 @@ export const listModules = async (req: Request, res: Response, next: NextFunctio
 export const enrollInModule = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const moduleId = req.params.id as string;
+    // Department scoping: block enrollment into another department's module
+    const module = await prisma.learningModule.findUnique({
+      where: { id: moduleId },
+      select: { branchId: true },
+    });
+    if (!module) throw ApiError.notFound('Module not found');
+    await assertStudentCanAccessContent(req, module.branchId);
+
     const prereq = await checkPrerequisites(req.user!.id, moduleId);
     if (!prereq.satisfied) {
       throw ApiError.forbidden(
@@ -380,6 +404,14 @@ export const enrollInModule = async (req: Request, res: Response, next: NextFunc
 export const evaluateMyModule = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const moduleId = req.params.id as string;
+    // Department scoping: block evaluation of another department's module
+    const module = await prisma.learningModule.findUnique({
+      where: { id: moduleId },
+      select: { branchId: true },
+    });
+    if (!module) throw ApiError.notFound('Module not found');
+    await assertStudentCanAccessContent(req, module.branchId);
+
     const result = await evaluateModuleCompletion(req.user!.id, moduleId);
     res.json({ success: true, data: result });
   } catch (err) {
@@ -550,18 +582,21 @@ export const updateContentStatus = async (req: Request, res: Response, next: Nex
 export const updateVisibility = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
-    const { visibility, license, attribution, alternatives } = req.body;
+    const { visibility, license, attribution, alternatives, branchId } = req.body;
     const resource = await prisma.resource.findUnique({ where: { id } });
     if (!resource) throw ApiError.notFound('Resource not found');
     if (resource.uploadedBy !== req.user!.id && req.user!.role !== 'admin') {
       throw ApiError.forbidden('Owner or admin only');
     }
 
+    // Department scoping: set / clear department assignment (null => global)
+    const resolvedBranchId = 'branchId' in req.body ? await resolveBranchIdOrThrow(branchId) : undefined;
+
     const updated = await prisma.resource.update({
       where: { id },
-      data: { visibility, license, attribution, alternatives },
+      data: { visibility, license, attribution, alternatives, ...(resolvedBranchId !== undefined ? { branchId: resolvedBranchId } : {}) },
     });
-    await audit(req.user!.id, 'resource.visibility_change', 'resource', id, 'success', { visibility });
+    await audit(req.user!.id, 'resource.visibility_change', 'resource', id, 'success', { visibility, branchId: resolvedBranchId });
     res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
@@ -730,6 +765,12 @@ export const getResources = async (req: Request, res: Response, next: NextFuncti
     if (type) where.resourceType = type;
     if (category) where.category = { contains: category as string, mode: 'insensitive' };
     if (search) where.title = { contains: search as string, mode: 'insensitive' };
+
+    // Department scoping: students only see global resources + their own department's
+    if (!['trainer', 'admin', 'po'].includes(req.user?.role || '')) {
+      const branchCtx = await getStudentBranchContext(req);
+      Object.assign(where, branchScopeFilter(branchCtx));
+    }
 
     const take = limit ? Math.min(100, Math.max(1, parseInt(limit as string, 10) || 50)) : 50;
 

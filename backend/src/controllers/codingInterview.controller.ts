@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
 import { audit } from '../services/audit.service.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+} from '../middleware/departmentAccess.js';
 
 // ============================================================
 // PROBLEM BANK
@@ -16,6 +21,12 @@ export const getProblems = async (req: Request, res: Response, next: NextFunctio
     if (topicId) where.topicId = parseInt(topicId as string, 10);
     if (company) where.companyTags = { has: company as string };
     if (search) where.title = { contains: search as string, mode: 'insensitive' };
+
+    // Department scoping: students only see global problems + their own department's
+    if (!['trainer', 'admin', 'po'].includes(req.user?.role || '')) {
+      const branchCtx = await getStudentBranchContext(req);
+      Object.assign(where, branchScopeFilter(branchCtx));
+    }
 
     const problems = await prisma.codingProblem.findMany({
       where,
@@ -49,6 +60,9 @@ export const getProblemBySlug = async (req: Request, res: Response, next: NextFu
       throw ApiError.notFound('Problem not found.');
     }
 
+    // Department scoping: block direct access to another department's problem
+    await assertStudentCanAccessContent(req, problem.branchId);
+
     res.json({ success: true, data: problem });
   } catch (err) { next(err); }
 };
@@ -64,6 +78,9 @@ export const submitSolution = async (req: Request, res: Response, next: NextFunc
       include: { testCases: true }
     });
     if (!problem) throw ApiError.notFound('Problem not found.');
+
+    // Department scoping: block submissions against another department's problem
+    await assertStudentCanAccessContent(req, problem.branchId);
 
     // Manual Evaluation Workflow: Save as pending review
     const submission = await prisma.codingSubmission.create({
@@ -111,8 +128,15 @@ export const evaluateSubmission = async (req: Request, res: Response, next: Next
 
 export const getPlans = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Department scoping: students only see global plans + their own department's
+    const where: any = { status: 'published' };
+    if (!['trainer', 'admin', 'po'].includes(req.user?.role || '')) {
+      const branchCtx = await getStudentBranchContext(req);
+      Object.assign(where, branchScopeFilter(branchCtx));
+    }
+
     const plans = await prisma.interviewPreparationPlan.findMany({
-      where: { status: 'published' },
+      where,
       include: { _count: { select: { tasks: true } } }
     });
     res.json({ success: true, data: plans });
@@ -132,6 +156,10 @@ export const getPlanById = async (req: Request, res: Response, next: NextFunctio
       }
     });
     if (!plan) throw ApiError.notFound('Plan not found.');
+
+    // Department scoping: block direct access to another department's preparation plan
+    await assertStudentCanAccessContent(req, plan.branchId);
+
     res.json({ success: true, data: plan });
   } catch (err) { next(err); }
 };

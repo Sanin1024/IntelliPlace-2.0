@@ -94,6 +94,9 @@ router.post(
         description: z.string().max(2000).optional(),
         level: z.enum(['beginner', 'intermediate', 'advanced']),
         topicId: z.number().int().positive().optional(),
+        branchId: z.number({ message: 'branchId must be a number' })
+          .int().positive('branchId must be positive')
+          .nullable().optional(), // Department scoping: null/omitted => global
         resourceId: z.string().optional(),
         assessmentTestId: z.string().optional(),
         codingProblemId: z.string().optional(),
@@ -177,6 +180,9 @@ router.patch(
         license: z.string().max(300).optional(),
         attribution: z.string().max(500).optional(),
         alternatives: z.array(z.string().url()).max(5).optional(),
+        branchId: z.number({ message: 'branchId must be a number' })
+          .int().positive('branchId must be positive')
+          .nullable().optional(), // Department scoping: null resets to global
       }),
     })
   ),

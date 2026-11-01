@@ -117,13 +117,24 @@ export async function calculateStudentReadiness(studentId: string): Promise<Read
   }
 
   // 2. Distinct coding problems solved (proportional: 30 * distinctSolved / totalProblems)
+  // Department scoping: the denominator only counts problems the student can access
+  // (global problems + those of the student's own department)
+  const studentProfile = await prisma.studentProfile.findUnique({
+    where: { userId: studentId },
+    select: { branchId: true },
+  });
+  const branchScope =
+    studentProfile?.branchId != null
+      ? { OR: [{ branchId: null }, { branchId: studentProfile.branchId }] }
+      : { branchId: null };
+
   const [passedSubmissions, totalCodingProblems] = await Promise.all([
     prisma.codingSubmission.findMany({
       where: { studentId, isPassed: true },
       distinct: ['problemId'],
       select: { problemId: true },
     }),
-    prisma.codingProblem.count(),
+    prisma.codingProblem.count({ where: branchScope }),
   ]);
 
   const distinctSolved = passedSubmissions.length;

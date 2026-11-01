@@ -55,6 +55,10 @@ export const startAttempt = async (req: Request, res: Response, next: NextFuncti
       if (test.batchId && profile?.batchId !== test.batchId) {
         throw ApiError.forbidden('This assessment is not available for your batch.');
       }
+      // Department scoping: block starting attempts on other departments' assessments
+      if (test.branchId && profile?.branchId !== test.branchId) {
+        throw ApiError.forbidden('This assessment is not available for your department.');
+      }
 
       const attemptCount = await tx.testAttempt.count({
         where: { testId, studentId, attemptType: 'mock' },

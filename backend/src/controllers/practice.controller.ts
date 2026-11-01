@@ -1,6 +1,11 @@
 ﻿import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/errors.js';
+import {
+  getStudentBranchContext,
+  branchScopeFilter,
+  assertStudentCanAccessContent,
+} from '../middleware/departmentAccess.js';
 
 /**
  * POST /api/practice/start
@@ -20,10 +25,13 @@ export const startPractice = async (req: Request, res: Response, next: NextFunct
     }
 
     // Fetch random questions (WITHOUT correctOption and explanation)
+    // Department scoping: only global questions + the student's own department's
+    const branchCtx = await getStudentBranchContext(req);
     const allQuestions = await prisma.aptitudeQuestion.findMany({
       where: {
         topicId,
         ...(difficulty ? { difficulty: difficulty as any } : {}),
+        ...branchScopeFilter(branchCtx),
       },
       select: {
         id: true,
@@ -95,6 +103,9 @@ export const submitAnswer = async (req: Request, res: Response, next: NextFuncti
       where: { id: questionId },
     });
     if (!question) throw ApiError.notFound('Question not found');
+
+    // Department scoping: block answering another department's question via direct API call
+    await assertStudentCanAccessContent(req, question.branchId);
 
     // Check if already answered this question in this attempt
     const existingAnswer = await prisma.studentAnswer.findUnique({

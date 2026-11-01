@@ -61,11 +61,12 @@ export async function generateRecommendations(studentId: string) {
     getCareerGoal(studentId),
     prisma.studentProfile.findUnique({
       where: { userId: studentId },
-      select: { knowledgeLevel: true },
+      select: { knowledgeLevel: true, branchId: true },
     }),
   ]);
 
   const studentLevel = profile?.knowledgeLevel || 'beginner';
+  const studentBranchId = profile?.branchId ?? null;
 
   // Identify weak skills (< 60% accuracy)
   const weakSkills = new Set<string>();
@@ -117,10 +118,14 @@ export async function generateRecommendations(studentId: string) {
   }
 
   // 3. Find candidates resources
+  // Department scoping: recommend only global resources + the student's own department's
   const resources = await prisma.resource.findMany({
     where: {
       contentStatus: 'updated',
       visibility: { in: ['public', 'institution'] },
+      ...(studentBranchId !== null
+        ? { OR: [{ branchId: null }, { branchId: studentBranchId }] }
+        : { branchId: null }),
     },
     include: { topic: { select: { id: true, name: true } } },
     take: 50,

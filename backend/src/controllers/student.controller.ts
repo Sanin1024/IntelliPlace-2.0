@@ -267,6 +267,12 @@ export const getStudentDashboardSummary = async (req: Request, res: Response, ne
     if (!user || !user.studentProfile) throw ApiError.notFound('Student profile not found');
     const profile = user.studentProfile;
 
+    // Department scoping: students only see global tests + their own department's
+    const studentBranchScope =
+      profile.branchId !== null && profile.branchId !== undefined
+        ? { OR: [{ branchId: null as number | null }, { branchId: profile.branchId }] }
+        : { branchId: null as number | null };
+
     // 2. Mock test attempts & coding submissions
     const [mockAttempts, passedCodingProblems, totalProblemsCount, studentAnswers, myTargets, availableTests, companies, notifications] = await Promise.all([
       prisma.testAttempt.findMany({
@@ -279,7 +285,8 @@ export const getStudentDashboardSummary = async (req: Request, res: Response, ne
         distinct: ['problemId'],
         select: { problemId: true },
       }),
-      prisma.codingProblem.count(),
+      // Department scoping: readiness denominator counts only problems the student can actually access
+      prisma.codingProblem.count({ where: studentBranchScope }),
       prisma.studentAnswer.findMany({
         where: { attempt: { studentId, status: 'submitted' }, isCorrect: { not: null } },
         include: { question: { select: { topicId: true, topic: { select: { id: true, name: true } } } } },
@@ -289,7 +296,7 @@ export const getStudentDashboardSummary = async (req: Request, res: Response, ne
         select: { companyId: true },
       }),
       prisma.mockTest.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...studentBranchScope },
         include: {
           questions: { select: { questionId: true } },
           batch: { select: { id: true, name: true } },

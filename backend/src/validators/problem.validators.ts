@@ -16,6 +16,10 @@ export const createProblemSchema = z.object({
     sampleOutput: z.string().min(1, 'Sample output is required'),
     tags: z.array(z.string()).optional().default([]),
     testCases: z.array(testCaseSchema).min(1, 'At least one test case is required'),
+    slug: z.string().min(1).max(120).optional(), // Auto-generated from the title when omitted
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null/omitted => global
   }),
 });
 
@@ -32,6 +36,9 @@ export const updateProblemSchema = z.object({
     sampleOutput: z.string().optional(),
     tags: z.array(z.string()).optional(),
     testCases: z.array(testCaseSchema).optional(),
+    branchId: z.number({ message: 'branchId must be a number' })
+      .int().positive('branchId must be positive')
+      .nullable().optional(), // Department scoping: null resets to global
   }),
 });
 

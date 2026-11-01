@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireDepartmentBranch } from '../middleware/departmentAccess.js';
 import * as c from '../controllers/mechanicalTraining.controller.js';
 
 const router = Router();
 router.use(requireAuth);
+
+// Department-level access control: only students of the ME department (and staff) may use this module
+router.use(requireDepartmentBranch('ME'));
 
 // Career Tracks
 router.get('/career-tracks', c.getCareerTracks);
